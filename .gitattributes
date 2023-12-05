@@ -1,0 +1,6 @@
+/tests/                 export-ignore
+/phpunit.xml.dist       export-ignore
+/phpstan.dist.neon      export-ignore
+/.*                     export-ignore
+/psalm.xml              export-ignore
+/rector.php             export-ignore

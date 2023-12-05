@@ -4,7 +4,7 @@
     "type": "library",
     "require": {
         "php": "~8.0.0 || ~8.1.0 || ~8.2.0 || ~8.3.0",
-        "doctrine/orm": "^2.5"
+        "doctrine/orm": "^2.17"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.40",

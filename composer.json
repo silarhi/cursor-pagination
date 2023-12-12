@@ -9,7 +9,7 @@
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.40",
         "phpunit/phpunit": "^9.6.15",
-        "phpstan/phpstan": "^1.10.47",
+        "phpstan/phpstan": "^1.10.49",
         "rector/rector": "^0.18",
         "vimeo/psalm": "^5.17",
         "doctrine/data-fixtures": "^1.7",

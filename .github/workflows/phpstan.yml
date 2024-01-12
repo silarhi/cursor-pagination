@@ -38,7 +38,7 @@ jobs:
             echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       -   name: Cache composer dependencies
-          uses: actions/cache@v3.3.2
+          uses: actions/cache@v3.3.3
           with:
             path: ${{ steps.composer-cache.outputs.dir }}
             key: ${{ matrix.php }}-composer-${{ hashFiles('**/composer.lock') }}

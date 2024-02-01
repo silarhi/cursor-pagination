@@ -11,7 +11,7 @@
         "phpunit/phpunit": "^9.6.15",
         "phpstan/phpstan": "^1.10.57",
         "rector/rector": "^0.19",
-        "vimeo/psalm": "^5.20",
+        "vimeo/psalm": "^5.21",
         "doctrine/data-fixtures": "^1.7",
         "symfony/cache": "^6.0|^7.0"
     },

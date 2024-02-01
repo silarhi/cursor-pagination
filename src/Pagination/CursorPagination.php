@@ -70,21 +70,25 @@ class CursorPagination
                 $this->applyCursor($queryBuilder);
             }
 
-            $yieldResults = 0;
-            $lastResult = null;
             $paginator = new Paginator($queryBuilder, $this->fetchJoinCollection);
             $paginator->setUseOutputWalkers($this->useOutputWalkers);
-            foreach ($paginator->getIterator() as $result) {
-                $lastResult = $result;
-                yield $result;
+
+            $results = iterator_to_array($paginator->getIterator());
+            if ([] === $results) {
+                break;
+            }
+
+            // Update cursor value before actually yielding results in order to avoid data loss
+            $lastResult = $results[array_key_last($results)];
+            $this->updateCursorValues($lastResult);
+
+            $yieldResults = 0;
+            foreach ($results as $result) {
                 ++$yieldResults;
+                yield $result;
             }
 
-            if ($yieldResults > 0) {
-                $this->updateCursorValues($lastResult);
-            }
-
-            if ($yieldResults < $this->maxPerPages || [] === $this->afterValues) {
+            if ($yieldResults < $this->maxPerPages) {
                 break;
             }
         }

@@ -26,7 +26,7 @@ use IteratorAggregate;
  */
 class OrderConfigurations implements IteratorAggregate, Countable, ArrayAccess
 {
-    /** @var array<int, OrderConfiguration> */
+    /** @var array<int|string, OrderConfiguration> */
     private array $orderConfigurations;
 
     public function __construct(OrderConfiguration ...$orderConfigurations)
@@ -50,7 +50,7 @@ class OrderConfigurations implements IteratorAggregate, Countable, ArrayAccess
     }
 
     /**
-     * @return array<int, OrderConfiguration>
+     * @return array<int|string, OrderConfiguration>
      */
     public function getOrderConfigurations(): array
     {
@@ -58,7 +58,7 @@ class OrderConfigurations implements IteratorAggregate, Countable, ArrayAccess
     }
 
     /**
-     * @return ArrayIterator<int, OrderConfiguration>
+     * @return ArrayIterator<int|string, OrderConfiguration>
      */
     public function getIterator(): ArrayIterator
     {

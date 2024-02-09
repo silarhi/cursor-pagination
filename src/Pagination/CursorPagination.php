@@ -27,7 +27,7 @@ use Silarhi\CursorPagination\Iterator\ChunkIterator;
  */
 class CursorPagination
 {
-    /** @var array<int, mixed> */
+    /** @var array<int|string, mixed> */
     private array $afterValues = [];
 
     public function __construct(

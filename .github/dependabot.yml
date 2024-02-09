@@ -10,15 +10,29 @@
       "directory": "/",
       "package-ecosystem": "composer",
       "schedule": {
-        "interval": "daily"
+        "interval": "weekly"
       },
-      "versioning-strategy": "increase"
+      "versioning-strategy": "increase",
+      "ignore": [
+        {
+          "dependency-name": "phpunit/phpunit",
+          "update-types": ["version-update:semver-major"]
+        },
+        {
+          "dependency-name": "symfony/cache",
+          "update-types": ["version-update:semver-major"]
+        },
+        {
+          "dependency-name": "doctrine/orm",
+          "update-types": ["version-update:semver-major"]
+        }
+      ]
     },
     {
       "directory": "/",
       "package-ecosystem": "github-actions",
       "schedule": {
-        "interval": "daily"
+        "interval": "weekly"
       }
     }
   ]

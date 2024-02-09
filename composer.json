@@ -1,6 +1,7 @@
 {
     "name": "silarhi/cursor-pagination",
     "description": "Doctrine ORM cursor based pagination library",
+    "keywords": ["doctrine", "orm", "pagination", "cursor", "cursor-pagination"],
     "type": "library",
     "require": {
         "php": "~8.0.0 || ~8.1.0 || ~8.2.0 || ~8.3.0",

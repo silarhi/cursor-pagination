@@ -1,4 +1,4 @@
-# Cursor based generation for doctrine Query Builder
+# A doctrine ORM cursor based pagination library for faster batch operations
 
 ## Installation
 

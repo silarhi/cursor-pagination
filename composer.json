@@ -1,10 +1,11 @@
 {
     "name": "silarhi/cursor-pagination",
-    "description": "Doctrine ORM cursor based pagination library",
+    "description": "A doctrine ORM cursor based pagination library for faster batch operations.",
+    "keywords": ["doctrine", "orm", "pagination", "cursor", "cursor-pagination"],
     "type": "library",
     "require": {
-        "php": "~8.0.0 || ~8.1.0 || ~8.2.0 || ~8.3.0",
-        "doctrine/orm": "^2.5"
+        "php": ">=8.0",
+        "doctrine/orm": "^2.5|^3.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.49",

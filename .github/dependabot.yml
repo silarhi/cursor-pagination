@@ -1,25 +1,20 @@
-{
-  "version": 2,
-  "updates": [
-    {
-      "allow": [
-        {
-          "dependency-type": "all"
-        }
-      ],
-      "directory": "/",
-      "package-ecosystem": "composer",
-      "schedule": {
-        "interval": "daily"
-      },
-      "versioning-strategy": "increase"
-    },
-    {
-      "directory": "/",
-      "package-ecosystem": "github-actions",
-      "schedule": {
-        "interval": "daily"
-      }
-    }
-  ]
-}
+version: 2
+updates:
+  - allow:
+      - dependency-type: "all"
+    directory: "/"
+    package-ecosystem: "composer"
+    schedule:
+      interval: "weekly"
+    versioning-strategy: "increase"
+    ignore:
+      - dependency-name: "phpunit/phpunit"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "symfony/cache"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "doctrine/orm"
+        update-types: ["version-update:semver-major"]
+  - directory: "/"
+    package-ecosystem: "github-actions"
+    schedule:
+      interval: "weekly"

@@ -19,7 +19,7 @@ use Traversable;
 
 /**
  * @template TValue
- * @template TKey
+ * @template TKey of int|string
  *
  * @implements IteratorAggregate<TKey, TValue>
  */
@@ -33,7 +33,7 @@ class ChunkIterator implements IteratorAggregate
     }
 
     /**
-     * @return Traversable<TKey, array<TValue>>
+     * @return Traversable<int, array<TKey, TValue>>
      */
     public function getIterator(): Traversable
     {

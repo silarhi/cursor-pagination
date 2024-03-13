@@ -61,24 +61,24 @@ class CursorPaginationTest extends DoctrineTestCase
     /**
      * @dataProvider provideInverse
      */
-    public function testComplexPagination(bool $inverse): void
+    public function testComplexPagination(bool $inverseConfigurations): void
     {
         $queryBuilder = $this
             ->entityManager
             ->getRepository(User::class)
             ->createQueryBuilder('u')
         ;
-        if ($inverse) {
-            $configurations = new OrderConfigurations(
-                new OrderConfiguration('u.number', fn (User $user) => $user->getNumber()),
-                new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
-            );
-        } else {
-            $configurations = new OrderConfigurations(
-                new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
-                new OrderConfiguration('u.number', fn (User $user) => $user->getNumber()),
-            );
+
+        $orderConfigurations = [
+            new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
+            new OrderConfiguration('u.number', fn (User $user) => $user->getNumber()),
+        ];
+
+        if ($inverseConfigurations) {
+            $orderConfigurations = array_reverse($orderConfigurations);
         }
+
+        $configurations = new OrderConfigurations(...$orderConfigurations);
 
         /** @var CursorPagination<User> $pagination */
         $pagination = new CursorPagination($queryBuilder, $configurations, 2);

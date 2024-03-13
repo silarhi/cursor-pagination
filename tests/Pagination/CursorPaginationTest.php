@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Silarhi\CursorPagination\Tests\Pagination;
 
+use function count;
+
 use Silarhi\CursorPagination\Configuration\OrderConfiguration;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Pagination\CursorPagination;
@@ -40,6 +42,7 @@ class CursorPaginationTest extends DoctrineTestCase
             self::assertEquals($expectedResults[$index], $result->getId());
             ++$index;
         }
+        self::assertEquals(count($expectedResults), $index);
 
         $index = 0;
         foreach ($pagination->getChunkResults() as $results) {
@@ -49,6 +52,7 @@ class CursorPaginationTest extends DoctrineTestCase
                 ++$index;
             }
         }
+        self::assertEquals(count($expectedResults), $index);
     }
 
     /**
@@ -83,6 +87,7 @@ class CursorPaginationTest extends DoctrineTestCase
             self::assertEquals($expectedResults[$index], $result->getId());
             ++$index;
         }
+        self::assertEquals(count($expectedResults), $index);
 
         $index = 0;
         foreach ($pagination->getChunkResults() as $results) {
@@ -92,6 +97,7 @@ class CursorPaginationTest extends DoctrineTestCase
                 ++$index;
             }
         }
+        self::assertEquals(count($expectedResults), $index);
     }
 
     /**

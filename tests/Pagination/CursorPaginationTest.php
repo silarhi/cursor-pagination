@@ -61,7 +61,7 @@ class CursorPaginationTest extends DoctrineTestCase
     /**
      * @dataProvider provideInverse
      */
-    public function testComplexPagination(bool $inverseConfigurations): void
+    public function testComplexPagination(bool $inverseConfigurations, bool $reverseOrder): void
     {
         $queryBuilder = $this
             ->entityManager
@@ -70,8 +70,8 @@ class CursorPaginationTest extends DoctrineTestCase
         ;
 
         $orderConfigurations = [
-            new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
-            new OrderConfiguration('u.number', fn (User $user) => $user->getNumber()),
+            new OrderConfiguration('u.id', fn (User $user) => $user->getId(), !$reverseOrder),
+            new OrderConfiguration('u.number', fn (User $user) => $user->getNumber(), !$reverseOrder),
         ];
 
         if ($inverseConfigurations) {
@@ -84,6 +84,10 @@ class CursorPaginationTest extends DoctrineTestCase
         $pagination = new CursorPagination($queryBuilder, $configurations, 2);
 
         $expectedResults = range(1, 10);
+        if ($reverseOrder) {
+            $expectedResults = array_reverse($expectedResults);
+        }
+
         $index = 0;
         foreach ($pagination->getResults() as $result) {
             self::assertInstanceOf(User::class, $result);
@@ -150,7 +154,9 @@ class CursorPaginationTest extends DoctrineTestCase
      */
     public function provideInverse(): iterable
     {
-        yield [true];
-        yield [false];
+        yield [true, true];
+        yield [true, false];
+        yield [false, true];
+        yield [false, false];
     }
 }

@@ -92,6 +92,8 @@ class CursorPagination
                 break;
             }
         }
+
+        $this->resetCursorValues();
     }
 
     private function applyCursor(QueryBuilder $queryBuilder): void
@@ -121,6 +123,11 @@ class CursorPagination
         }
 
         $queryBuilder->andWhere($whereClause);
+    }
+
+    private function resetCursorValues(): void
+    {
+        $this->afterValues = [];
     }
 
     private function updateCursorValues(mixed $item): void

@@ -45,14 +45,17 @@ class CursorPaginationTest extends DoctrineTestCase
         self::assertEquals(count($expectedResults), $index);
 
         $index = 0;
+        $chunks = 0;
         foreach ($pagination->getChunkResults() as $results) {
             foreach ($results as $result) {
                 self::assertInstanceOf(User::class, $result);
                 self::assertEquals($expectedResults[$index], $result->getId());
                 ++$index;
             }
+            ++$chunks;
         }
         self::assertEquals(count($expectedResults), $index);
+        self::assertEquals(ceil(count($expectedResults) / 2), $chunks);
     }
 
     /**
@@ -90,14 +93,17 @@ class CursorPaginationTest extends DoctrineTestCase
         self::assertEquals(count($expectedResults), $index);
 
         $index = 0;
+        $chunks = 0;
         foreach ($pagination->getChunkResults() as $results) {
             foreach ($results as $result) {
                 self::assertInstanceOf(User::class, $result);
                 self::assertEquals($expectedResults[$index], $result->getId());
                 ++$index;
             }
+            ++$chunks;
         }
         self::assertEquals(count($expectedResults), $index);
+        self::assertEquals(ceil(count($expectedResults) / 2), $chunks);
     }
 
     /**

@@ -106,6 +106,45 @@ class CursorPaginationTest extends DoctrineTestCase
         self::assertEquals(ceil(count($expectedResults) / 2), $chunks);
     }
 
+    public function testComplexReversedPagination(): void
+    {
+        $configurations = new OrderConfigurations(
+            new OrderConfiguration('u.tenantId', fn (User $user) => $user->getTenantId()),
+            new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
+        );
+
+        $queryBuilder = $this
+            ->entityManager
+            ->getRepository(User::class)
+            ->createQueryBuilder('u')
+        ;
+
+        /** @var CursorPagination<User> $pagination */
+        $pagination = new CursorPagination($queryBuilder, $configurations, 2);
+
+        $expectedResults = [1, 2, 3, 7, 8, 9, 4, 5, 6, 10];
+        $index = 0;
+        foreach ($pagination->getResults() as $result) {
+            self::assertInstanceOf(User::class, $result);
+            self::assertEquals($expectedResults[$index], $result->getId());
+            ++$index;
+        }
+        self::assertEquals(count($expectedResults), $index);
+
+        $index = 0;
+        $chunks = 0;
+        foreach ($pagination->getChunkResults() as $results) {
+            foreach ($results as $result) {
+                self::assertInstanceOf(User::class, $result);
+                self::assertEquals($expectedResults[$index], $result->getId());
+                ++$index;
+            }
+            ++$chunks;
+        }
+        self::assertEquals(count($expectedResults), $index);
+        self::assertEquals(ceil(count($expectedResults) / 2), $chunks);
+    }
+
     /**
      * @return iterable<int, array<int, bool>>
      */

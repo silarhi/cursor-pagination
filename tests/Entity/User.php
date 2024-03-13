@@ -26,6 +26,9 @@ class User
     #[ORM\Column(type: Types::INTEGER)]
     private ?int $number = null;
 
+    #[ORM\Column(type: Types::INTEGER)]
+    private ?int $tenantId = null;
+
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $username;
 
@@ -78,5 +81,15 @@ class User
     public function setNumber(?int $number): void
     {
         $this->number = $number;
+    }
+
+    public function getTenantId(): ?int
+    {
+        return $this->tenantId;
+    }
+
+    public function setTenantId(?int $tenantId): void
+    {
+        $this->tenantId = $tenantId;
     }
 }

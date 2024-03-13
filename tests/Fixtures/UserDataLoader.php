@@ -20,9 +20,22 @@ class UserDataLoader implements FixtureInterface
 {
     public function load(ObjectManager $manager): void
     {
+        $tenantIds = [
+            2,
+            2,
+            2,
+            12,
+            12,
+            12,
+            2,
+            2,
+            2,
+            12,
+        ];
         for ($i = 1; $i <= 10; ++$i) {
             $user = new User();
             $user->setNumber($i);
+            $user->setTenantId($tenantIds[$i - 1]);
             $user->setUsername(sprintf('User %d', $i));
             $user->setFirstName(sprintf('First name %d', $i));
             $user->setLastName(sprintf('Last name %d', $i));

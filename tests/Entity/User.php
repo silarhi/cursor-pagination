@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Silarhi\CursorPagination\Tests\Entity;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -19,19 +20,22 @@ class User
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'integer')]
+    #[ORM\Column(type: Types::INTEGER)]
     private ?int $id = null;
 
-    #[ORM\Column(type: 'integer')]
+    #[ORM\Column(type: Types::INTEGER)]
     private ?int $number = null;
 
-    #[ORM\Column(type: 'string', length: 255)]
+    #[ORM\Column(type: Types::INTEGER)]
+    private ?int $tenantId = null;
+
+    #[ORM\Column(type: Types::STRING, length: 255)]
     private string $username;
 
-    #[ORM\Column(type: 'string', length: 255)]
+    #[ORM\Column(type: Types::STRING, length: 255)]
     private string $firstName;
 
-    #[ORM\Column(type: 'string', length: 255)]
+    #[ORM\Column(type: Types::STRING, length: 255)]
     private string $lastName;
 
     public function getId(): ?int
@@ -77,5 +81,15 @@ class User
     public function setNumber(?int $number): void
     {
         $this->number = $number;
+    }
+
+    public function getTenantId(): ?int
+    {
+        return $this->tenantId;
+    }
+
+    public function setTenantId(?int $tenantId): void
+    {
+        $this->tenantId = $tenantId;
     }
 }

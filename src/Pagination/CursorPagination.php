@@ -16,9 +16,11 @@ use function count;
 
 use Doctrine\ORM\Query\Expr\Andx;
 use Doctrine\ORM\Query\Expr\Comparison;
+use Doctrine\ORM\Query\Expr\Orx;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Generator;
+use LogicException;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Iterator\ChunkIterator;
 
@@ -92,35 +94,47 @@ class CursorPagination
                 break;
             }
         }
+
+        $this->resetCursorValues();
     }
 
     private function applyCursor(QueryBuilder $queryBuilder): void
     {
-        $whereClause = new Andx();
+        $whereClause = new Orx();
+        $previousConditions = new Andx();
         foreach ($this->orderConfigurations as $index => $configuration) {
             $useLargerThan = $configuration->isOrderAscending();
             $sign = $useLargerThan ? '>' : '<';
-            $isUnique = $configuration->isUnique()
-                ?? (
-                    1 === count($this->orderConfigurations)
-                    || $index === count($this->orderConfigurations) - 1
-                );
 
-            if (!$isUnique) {
-                $sign .= '=';
+            if (false === $configuration->isUnique() && 1 === count($this->orderConfigurations)) {
+                throw new LogicException('When using a single order configuration, it must be unique');
             }
 
             $cursorParameterName = sprintf(':cursor_parameter_%d', $index);
-            $whereClause->add(new Comparison(
+            $currentCondition = clone $previousConditions;
+            $currentCondition->add(new Comparison(
                 $configuration->getFieldName(),
                 $sign,
                 $cursorParameterName,
             ));
 
             $queryBuilder->setParameter($cursorParameterName, $this->afterValues[$index]);
+
+            $whereClause->add($currentCondition);
+
+            $previousConditions->add(new Comparison(
+                $configuration->getFieldName(),
+                '=',
+                $cursorParameterName,
+            ));
         }
 
         $queryBuilder->andWhere($whereClause);
+    }
+
+    private function resetCursorValues(): void
+    {
+        $this->afterValues = [];
     }
 
     private function updateCursorValues(mixed $item): void

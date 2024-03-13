@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Silarhi\CursorPagination\Tests\Pagination;
 
+use function count;
+
 use Silarhi\CursorPagination\Configuration\OrderConfiguration;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Pagination\CursorPagination;
@@ -40,58 +42,111 @@ class CursorPaginationTest extends DoctrineTestCase
             self::assertEquals($expectedResults[$index], $result->getId());
             ++$index;
         }
+        self::assertEquals(count($expectedResults), $index);
 
         $index = 0;
+        $chunks = 0;
         foreach ($pagination->getChunkResults() as $results) {
             foreach ($results as $result) {
                 self::assertInstanceOf(User::class, $result);
                 self::assertEquals($expectedResults[$index], $result->getId());
                 ++$index;
             }
+            ++$chunks;
         }
+        self::assertEquals(count($expectedResults), $index);
+        self::assertEquals(ceil(count($expectedResults) / 2), $chunks);
     }
 
     /**
      * @dataProvider provideInverse
      */
-    public function testComplexPagination(bool $inverse): void
+    public function testComplexPagination(bool $inverseConfigurations, bool $reverseOrder): void
     {
         $queryBuilder = $this
             ->entityManager
             ->getRepository(User::class)
             ->createQueryBuilder('u')
         ;
-        if ($inverse) {
-            $configurations = new OrderConfigurations(
-                new OrderConfiguration('u.number', fn (User $user) => $user->getNumber()),
-                new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
-            );
-        } else {
-            $configurations = new OrderConfigurations(
-                new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
-                new OrderConfiguration('u.number', fn (User $user) => $user->getNumber()),
-            );
+
+        $orderConfigurations = [
+            new OrderConfiguration('u.id', fn (User $user) => $user->getId(), !$reverseOrder),
+            new OrderConfiguration('u.number', fn (User $user) => $user->getNumber(), !$reverseOrder),
+        ];
+
+        if ($inverseConfigurations) {
+            $orderConfigurations = array_reverse($orderConfigurations);
         }
+
+        $configurations = new OrderConfigurations(...$orderConfigurations);
 
         /** @var CursorPagination<User> $pagination */
         $pagination = new CursorPagination($queryBuilder, $configurations, 2);
 
         $expectedResults = range(1, 10);
+        if ($reverseOrder) {
+            $expectedResults = array_reverse($expectedResults);
+        }
+
         $index = 0;
         foreach ($pagination->getResults() as $result) {
             self::assertInstanceOf(User::class, $result);
             self::assertEquals($expectedResults[$index], $result->getId());
             ++$index;
         }
+        self::assertEquals(count($expectedResults), $index);
 
         $index = 0;
+        $chunks = 0;
         foreach ($pagination->getChunkResults() as $results) {
             foreach ($results as $result) {
                 self::assertInstanceOf(User::class, $result);
                 self::assertEquals($expectedResults[$index], $result->getId());
                 ++$index;
             }
+            ++$chunks;
         }
+        self::assertEquals(count($expectedResults), $index);
+        self::assertEquals(ceil(count($expectedResults) / 2), $chunks);
+    }
+
+    public function testComplexReversedPagination(): void
+    {
+        $configurations = new OrderConfigurations(
+            new OrderConfiguration('u.tenantId', fn (User $user) => $user->getTenantId()),
+            new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
+        );
+
+        $queryBuilder = $this
+            ->entityManager
+            ->getRepository(User::class)
+            ->createQueryBuilder('u')
+        ;
+
+        /** @var CursorPagination<User> $pagination */
+        $pagination = new CursorPagination($queryBuilder, $configurations, 2);
+
+        $expectedResults = [1, 2, 3, 7, 8, 9, 4, 5, 6, 10];
+        $index = 0;
+        foreach ($pagination->getResults() as $result) {
+            self::assertInstanceOf(User::class, $result);
+            self::assertEquals($expectedResults[$index], $result->getId());
+            ++$index;
+        }
+        self::assertEquals(count($expectedResults), $index);
+
+        $index = 0;
+        $chunks = 0;
+        foreach ($pagination->getChunkResults() as $results) {
+            foreach ($results as $result) {
+                self::assertInstanceOf(User::class, $result);
+                self::assertEquals($expectedResults[$index], $result->getId());
+                ++$index;
+            }
+            ++$chunks;
+        }
+        self::assertEquals(count($expectedResults), $index);
+        self::assertEquals(ceil(count($expectedResults) / 2), $chunks);
     }
 
     /**
@@ -99,7 +154,9 @@ class CursorPaginationTest extends DoctrineTestCase
      */
     public function provideInverse(): iterable
     {
-        yield [true];
-        yield [false];
+        yield [true, true];
+        yield [true, false];
+        yield [false, true];
+        yield [false, false];
     }
 }

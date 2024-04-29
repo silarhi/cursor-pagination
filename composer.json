@@ -14,7 +14,7 @@
         "rector/rector": "^1.0",
         "vimeo/psalm": "^5.23",
         "doctrine/data-fixtures": "^1.7",
-        "symfony/cache": "^6.0|^7.0"
+        "symfony/cache": "^7.0.7"
     },
     "license": "MIT",
     "autoload": {

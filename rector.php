@@ -12,19 +12,19 @@ declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
 use Rector\Doctrine\Set\DoctrineSetList;
-use Rector\Set\ValueObject\LevelSetList;
-use Rector\Set\ValueObject\SetList;
 
-return static function (RectorConfig $config): void {
-    $config->importShortClasses();
-    $config->importNames();
-
-    $config->paths([
+return RectorConfig::configure()
+    ->withImportNames()
+    ->withPaths([
         __DIR__ . '/src',
         __DIR__ . '/tests',
-    ]);
-
-    $config->import(LevelSetList::UP_TO_PHP_80);
-    $config->import(SetList::CODE_QUALITY);
-    $config->import(DoctrineSetList::DOCTRINE_CODE_QUALITY);
-};
+    ])
+    ->withPhpSets()
+    ->withPreparedSets(
+        deadCode: true,
+        codeQuality: true
+    )
+    ->withSets([
+        DoctrineSetList::DOCTRINE_CODE_QUALITY,
+    ])
+;

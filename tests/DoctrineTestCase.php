@@ -35,7 +35,7 @@ abstract class DoctrineTestCase extends TestCase
         parent::setUp();
 
         if (!extension_loaded('pdo_sqlite')) {
-            $this->markTestSkipped('Extension pdo_sqlite is required.');
+            self::markTestSkipped('Extension pdo_sqlite is required.');
         }
 
         $connection = DriverManager::getConnection(

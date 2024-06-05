@@ -47,6 +47,13 @@ final class CursorPagination implements IteratorAggregate, Countable
     ) {
     }
 
+    public function getNbPages(): int
+    {
+        return 0 >= $this->maxPerPages
+            ? 0
+            : (int) ceil($this->count() / $this->maxPerPages);
+    }
+
     public function getIterator(): Generator
     {
         return $this->getResults();

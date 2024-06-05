@@ -175,6 +175,13 @@ final class CursorPaginationTest extends DoctrineTestCase
         yield [false];
     }
 
+    public function testGetPages(): void
+    {
+        $pagination = $this->getSimpleCursorPagination();
+
+        self::assertEquals(5, $pagination->getNbPages());
+    }
+
     /**
      * @return CursorPagination<User>
      */

@@ -14,6 +14,7 @@ namespace Silarhi\CursorPagination\Tests\Pagination;
 
 use function count;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Silarhi\CursorPagination\Configuration\OrderConfiguration;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Pagination\CursorPagination;
@@ -52,6 +53,7 @@ final class CursorPaginationTest extends DoctrineTestCase
     /**
      * @dataProvider provideInverse
      */
+    #[DataProvider('provideInverse')]
     public function testComplexPagination(bool $inverseConfigurations, bool $reverseOrder): void
     {
         $queryBuilder = $this
@@ -154,6 +156,7 @@ final class CursorPaginationTest extends DoctrineTestCase
     /**
      * @dataProvider provideInverse
      */
+    #[DataProvider('provideInverse')]
     public function testCount(bool $loadResultsBeforeCount): void
     {
         $pagination = $this->getSimpleCursorPagination();

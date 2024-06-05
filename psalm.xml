@@ -19,5 +19,6 @@
         <UnusedClass errorLevel="suppress" />
         <PossiblyUnusedMethod errorLevel="suppress" />
         <PossiblyUnusedProperty errorLevel="suppress" />
+        <UndefinedAttributeClass errorLevel="suppress" />
     </issueHandlers>
 </psalm>

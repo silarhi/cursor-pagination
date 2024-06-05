@@ -40,7 +40,7 @@ final class ChunkIteratorTest extends TestCase
     /**
      * @return iterable<int, array{data: iterable<int, mixed>, size: int, expectedYields: array<int, array<int, mixed>>}>
      */
-    public function provideChunk(): iterable
+    public static function provideChunk(): iterable
     {
         yield [
             'data' => [1, 2, 3, 4, 5],

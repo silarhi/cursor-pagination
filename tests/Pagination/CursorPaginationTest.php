@@ -143,7 +143,7 @@ final class CursorPaginationTest extends DoctrineTestCase
     /**
      * @return iterable<int, array<int, bool>>
      */
-    public function provideInverse(): iterable
+    public static function provideInverse(): iterable
     {
         yield [true, true];
         yield [true, false];

@@ -14,10 +14,11 @@ namespace Silarhi\CursorPagination\Tests\Iterator;
 
 use function count;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Silarhi\CursorPagination\Iterator\ChunkIterator;
 
-class ChunkIteratorTest extends TestCase
+final class ChunkIteratorTest extends TestCase
 {
     /**
      * @dataProvider provideChunk
@@ -25,6 +26,7 @@ class ChunkIteratorTest extends TestCase
      * @param iterable<int, mixed> $data
      * @param array<int, mixed>    $expectedYields
      */
+    #[DataProvider('provideChunk')]
     public function testGetIterator(iterable $data, int $size, array $expectedYields): void
     {
         $iterator = new ChunkIterator($data, $size);
@@ -40,7 +42,7 @@ class ChunkIteratorTest extends TestCase
     /**
      * @return iterable<int, array{data: iterable<int, mixed>, size: int, expectedYields: array<int, array<int, mixed>>}>
      */
-    public function provideChunk(): iterable
+    public static function provideChunk(): iterable
     {
         yield [
             'data' => [1, 2, 3, 4, 5],

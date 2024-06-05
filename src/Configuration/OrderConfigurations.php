@@ -24,7 +24,7 @@ use IteratorAggregate;
  * @implements IteratorAggregate<int, OrderConfiguration>
  * @implements ArrayAccess<int, OrderConfiguration>
  */
-class OrderConfigurations implements IteratorAggregate, Countable, ArrayAccess
+final class OrderConfigurations implements IteratorAggregate, Countable, ArrayAccess
 {
     /** @var array<int|string, OrderConfiguration> */
     private array $orderConfigurations;

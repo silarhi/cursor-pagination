@@ -1,0 +1,12 @@
+{
+  "devDependencies": {
+    "husky": ">=6",
+    "lint-staged": ">=10"
+  },
+  "lint-staged": {
+    "*.php": "php-cs-fixer fix --config=.php-cs-fixer.dist.php"
+  },
+  "scripts": {
+    "prepare": "husky install"
+  }
+}

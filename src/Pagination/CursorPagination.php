@@ -14,23 +14,29 @@ namespace Silarhi\CursorPagination\Pagination;
 
 use function count;
 
+use Countable;
 use Doctrine\ORM\Query\Expr\Andx;
 use Doctrine\ORM\Query\Expr\Comparison;
 use Doctrine\ORM\Query\Expr\Orx;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Generator;
+use IteratorAggregate;
 use LogicException;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Iterator\ChunkIterator;
 
 /**
  * @template-covariant T
+ *
+ * @implements IteratorAggregate<int, T>
  */
-final class CursorPagination
+final class CursorPagination implements IteratorAggregate, Countable
 {
     /** @var array<int|string, mixed> */
     private array $afterValues = [];
+
+    private ?int $nbResults = null;
 
     public function __construct(
         private QueryBuilder $queryBuilder,
@@ -39,6 +45,23 @@ final class CursorPagination
         private bool $fetchJoinCollection = true,
         private ?bool $useOutputWalkers = null,
     ) {
+    }
+
+    public function getIterator(): Generator
+    {
+        return $this->getResults();
+    }
+
+    public function count(): int
+    {
+        if (null === $this->nbResults) {
+            $paginator = new Paginator($this->queryBuilder, $this->fetchJoinCollection);
+            $paginator->setUseOutputWalkers($this->useOutputWalkers);
+
+            $this->nbResults = $paginator->count();
+        }
+
+        return $this->nbResults;
     }
 
     /**

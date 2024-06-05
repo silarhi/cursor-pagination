@@ -24,16 +24,7 @@ final class CursorPaginationTest extends DoctrineTestCase
 {
     public function testSimplePagination(): void
     {
-        $queryBuilder = $this
-            ->entityManager
-            ->getRepository(User::class)
-            ->createQueryBuilder('u')
-        ;
-
-        /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
-            new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
-        ), 2);
+        $pagination = $this->getSimpleCursorPagination();
 
         $expectedResults = range(1, 10);
         $index = 0;
@@ -158,5 +149,44 @@ final class CursorPaginationTest extends DoctrineTestCase
         yield [true, false];
         yield [false, true];
         yield [false, false];
+    }
+
+    /**
+     * @dataProvider provideInverse
+     */
+    public function testCount(bool $loadResultsBeforeCount): void
+    {
+        $pagination = $this->getSimpleCursorPagination();
+
+        if ($loadResultsBeforeCount) {
+            iterator_to_array($pagination->getResults());
+        }
+
+        self::assertEquals(10, $pagination->count());
+        self::assertEquals(10, count($pagination));
+    }
+
+    /**
+     * @return iterable<int, array<int, bool>>
+     */
+    public function provideLoadResults(): iterable
+    {
+        yield [true];
+        yield [false];
+    }
+
+    /**
+     * @return CursorPagination<User>
+     */
+    private function getSimpleCursorPagination(): CursorPagination
+    {
+        $queryBuilder = $this
+            ->entityManager
+            ->getRepository(User::class)
+            ->createQueryBuilder('u');
+
+        return new CursorPagination($queryBuilder, new OrderConfigurations(
+            new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
+        ), 2);
     }
 }

@@ -20,7 +20,7 @@ use Silarhi\CursorPagination\Pagination\CursorPagination;
 use Silarhi\CursorPagination\Tests\DoctrineTestCase;
 use Silarhi\CursorPagination\Tests\Entity\User;
 
-class CursorPaginationTest extends DoctrineTestCase
+final class CursorPaginationTest extends DoctrineTestCase
 {
     public function testSimplePagination(): void
     {

@@ -23,7 +23,7 @@ use Traversable;
  *
  * @implements IteratorAggregate<TKey, TValue>
  */
-class ChunkIterator implements IteratorAggregate
+final class ChunkIterator implements IteratorAggregate
 {
     /**
      * @param iterable<TKey, TValue> $data

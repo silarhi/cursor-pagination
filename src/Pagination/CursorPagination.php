@@ -27,7 +27,7 @@ use Silarhi\CursorPagination\Iterator\ChunkIterator;
 /**
  * @template-covariant T
  */
-class CursorPagination
+final class CursorPagination
 {
     /** @var array<int|string, mixed> */
     private array $afterValues = [];

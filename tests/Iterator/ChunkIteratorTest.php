@@ -17,7 +17,7 @@ use function count;
 use PHPUnit\Framework\TestCase;
 use Silarhi\CursorPagination\Iterator\ChunkIterator;
 
-class ChunkIteratorTest extends TestCase
+final class ChunkIteratorTest extends TestCase
 {
     /**
      * @dataProvider provideChunk

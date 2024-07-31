@@ -26,6 +26,8 @@ use LogicException;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Iterator\ChunkIterator;
 
+use function sprintf;
+
 /**
  * @template-covariant T
  *

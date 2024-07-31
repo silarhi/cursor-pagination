@@ -16,6 +16,8 @@ use Doctrine\Common\DataFixtures\FixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Silarhi\CursorPagination\Tests\Entity\User;
 
+use function sprintf;
+
 final class UserDataLoader implements FixtureInterface
 {
     public function load(ObjectManager $manager): void

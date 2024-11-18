@@ -12,6 +12,8 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "symfony/cache"
         update-types: ["version-update:semver-major"]
+      - dependency-name: "doctrine/fixtures"
+        update-types: ["version-update:semver-major"]
       - dependency-name: "doctrine/orm"
         update-types: ["version-update:semver-major"]
   - directory: "/"

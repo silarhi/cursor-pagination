@@ -41,11 +41,11 @@ final class CursorPagination implements IteratorAggregate, Countable
     private ?int $nbResults = null;
 
     public function __construct(
-        private QueryBuilder $queryBuilder,
-        private OrderConfigurations $orderConfigurations,
-        private int $maxPerPages = 100,
-        private bool $fetchJoinCollection = true,
-        private ?bool $useOutputWalkers = null,
+        private readonly QueryBuilder $queryBuilder,
+        private readonly OrderConfigurations $orderConfigurations,
+        private readonly int $maxPerPages = 100,
+        private readonly bool $fetchJoinCollection = true,
+        private readonly ?bool $useOutputWalkers = null,
     ) {
     }
 

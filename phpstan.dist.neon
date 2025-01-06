@@ -3,3 +3,5 @@ parameters:
 	paths:
 		- src
 		- tests
+	ignoreErrors:
+		- message: "#^Property Silarhi\\\\CursorPagination\\\\Tests\\\\Entity\\\\.*\\:\\:\\$id \\(int\\|null\\) is never assigned int so it can be removed from the property type\\.$#"

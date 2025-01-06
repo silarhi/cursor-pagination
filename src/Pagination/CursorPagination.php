@@ -38,6 +38,7 @@ final class CursorPagination implements IteratorAggregate, Countable
     /** @var array<int|string, mixed> */
     private array $afterValues = [];
 
+    /** @var int<0, max>|null */
     private ?int $nbResults = null;
 
     public function __construct(

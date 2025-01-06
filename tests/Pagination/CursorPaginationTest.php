@@ -195,8 +195,11 @@ final class CursorPaginationTest extends DoctrineTestCase
             ->getRepository(User::class)
             ->createQueryBuilder('u');
 
-        return new CursorPagination($queryBuilder, new OrderConfigurations(
+        /** @var CursorPagination<User> $pagination */
+        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
             new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
         ), 2);
+
+        return $pagination;
     }
 }

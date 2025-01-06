@@ -15,7 +15,7 @@ namespace Silarhi\CursorPagination\Configuration;
 use Closure;
 use Doctrine\Common\Collections\Criteria;
 
-final class OrderConfiguration
+final readonly class OrderConfiguration
 {
     public function __construct(
         private string $fieldName,

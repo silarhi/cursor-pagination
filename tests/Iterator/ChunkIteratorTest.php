@@ -21,8 +21,6 @@ use Silarhi\CursorPagination\Iterator\ChunkIterator;
 final class ChunkIteratorTest extends TestCase
 {
     /**
-     * @dataProvider provideChunk
-     *
      * @param iterable<int, mixed> $data
      * @param array<int, mixed>    $expectedYields
      */

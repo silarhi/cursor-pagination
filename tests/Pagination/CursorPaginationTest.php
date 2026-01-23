@@ -50,9 +50,6 @@ final class CursorPaginationTest extends DoctrineTestCase
         self::assertEquals(ceil(count($expectedResults) / 2), $chunks);
     }
 
-    /**
-     * @dataProvider provideInverse
-     */
     #[DataProvider('provideInverse')]
     public function testComplexPagination(bool $inverseConfigurations, bool $reverseOrder): void
     {
@@ -153,9 +150,6 @@ final class CursorPaginationTest extends DoctrineTestCase
         yield [false, false];
     }
 
-    /**
-     * @dataProvider provideInverse
-     */
     #[DataProvider('provideInverse')]
     public function testCount(bool $loadResultsBeforeCount): void
     {
@@ -172,7 +166,7 @@ final class CursorPaginationTest extends DoctrineTestCase
     /**
      * @return iterable<int, array<int, bool>>
      */
-    public function provideLoadResults(): iterable
+    public static function provideLoadResults(): iterable
     {
         yield [true];
         yield [false];

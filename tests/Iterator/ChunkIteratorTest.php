@@ -54,7 +54,7 @@ final class ChunkIteratorTest extends TestCase
         ];
 
         $yield = /**
-         * @psalm-return \Generator<int<0, 4>, int, mixed, null>
+         * @psalm-return Generator<int<0, 4>, int, mixed, null>
          */
         static fn (): Generator => yield from [1, 2, 3, 4, 5];
         yield [

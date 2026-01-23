@@ -50,9 +50,6 @@ final class CursorPaginationTest extends DoctrineTestCase
         self::assertEquals(ceil(count($expectedResults) / 2), $chunks);
     }
 
-    /**
-     * @dataProvider provideInverse
-     */
     #[DataProvider('provideInverse')]
     public function testComplexPagination(bool $inverseConfigurations, bool $reverseOrder): void
     {
@@ -63,8 +60,8 @@ final class CursorPaginationTest extends DoctrineTestCase
         ;
 
         $orderConfigurations = [
-            new OrderConfiguration('u.id', fn (User $user) => $user->getId(), !$reverseOrder),
-            new OrderConfiguration('u.number', fn (User $user) => $user->getNumber(), !$reverseOrder),
+            new OrderConfiguration('u.id', static fn (User $user) => $user->getId(), !$reverseOrder),
+            new OrderConfiguration('u.number', static fn (User $user) => $user->getNumber(), !$reverseOrder),
         ];
 
         if ($inverseConfigurations) {
@@ -106,8 +103,8 @@ final class CursorPaginationTest extends DoctrineTestCase
     public function testComplexReversedPagination(): void
     {
         $configurations = new OrderConfigurations(
-            new OrderConfiguration('u.tenantId', fn (User $user) => $user->getTenantId()),
-            new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
+            new OrderConfiguration('u.tenantId', static fn (User $user) => $user->getTenantId()),
+            new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
         );
 
         $queryBuilder = $this
@@ -153,10 +150,7 @@ final class CursorPaginationTest extends DoctrineTestCase
         yield [false, false];
     }
 
-    /**
-     * @dataProvider provideInverse
-     */
-    #[DataProvider('provideInverse')]
+    #[DataProvider('provideLoadResults')]
     public function testCount(bool $loadResultsBeforeCount): void
     {
         $pagination = $this->getSimpleCursorPagination();
@@ -172,7 +166,7 @@ final class CursorPaginationTest extends DoctrineTestCase
     /**
      * @return iterable<int, array<int, bool>>
      */
-    public function provideLoadResults(): iterable
+    public static function provideLoadResults(): iterable
     {
         yield [true];
         yield [false];
@@ -197,7 +191,7 @@ final class CursorPaginationTest extends DoctrineTestCase
 
         /** @var CursorPagination<User> $pagination */
         $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
-            new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
+            new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
         ), 2);
 
         return $pagination;

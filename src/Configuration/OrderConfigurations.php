@@ -19,6 +19,7 @@ use function count;
 
 use Countable;
 use IteratorAggregate;
+use Override;
 
 /**
  * @implements IteratorAggregate<int, OrderConfiguration>
@@ -41,7 +42,7 @@ final class OrderConfigurations implements IteratorAggregate, Countable, ArrayAc
 
     public function remove(OrderConfiguration $orderConfiguration): void
     {
-        $this->orderConfigurations = array_values(array_filter($this->orderConfigurations, fn (OrderConfiguration $oc) => $oc !== $orderConfiguration));
+        $this->orderConfigurations = array_values(array_filter($this->orderConfigurations, static fn (OrderConfiguration $oc) => $oc !== $orderConfiguration));
     }
 
     public function clear(): void
@@ -60,31 +61,37 @@ final class OrderConfigurations implements IteratorAggregate, Countable, ArrayAc
     /**
      * @return ArrayIterator<int|string, OrderConfiguration>
      */
+    #[Override]
     public function getIterator(): ArrayIterator
     {
         return new ArrayIterator($this->orderConfigurations);
     }
 
+    #[Override]
     public function offsetExists(mixed $offset): bool
     {
         return isset($this->orderConfigurations[$offset]);
     }
 
+    #[Override]
     public function offsetGet(mixed $offset): OrderConfiguration
     {
         return $this->orderConfigurations[$offset];
     }
 
+    #[Override]
     public function offsetSet(mixed $offset, mixed $value): void
     {
         $this->orderConfigurations[$offset] = $value;
     }
 
+    #[Override]
     public function offsetUnset(mixed $offset): void
     {
         unset($this->orderConfigurations[$offset]);
     }
 
+    #[Override]
     public function count(): int
     {
         return count($this->orderConfigurations);

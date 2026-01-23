@@ -14,12 +14,14 @@ namespace Silarhi\CursorPagination\Tests\Fixtures;
 
 use Doctrine\Common\DataFixtures\FixtureInterface;
 use Doctrine\Persistence\ObjectManager;
+use Override;
 use Silarhi\CursorPagination\Tests\Entity\User;
 
 use function sprintf;
 
 final class UserDataLoader implements FixtureInterface
 {
+    #[Override]
     public function load(ObjectManager $manager): void
     {
         $tenantIds = [

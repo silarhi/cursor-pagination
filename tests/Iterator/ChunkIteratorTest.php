@@ -14,6 +14,7 @@ namespace Silarhi\CursorPagination\Tests\Iterator;
 
 use function count;
 
+use Generator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Silarhi\CursorPagination\Iterator\ChunkIterator;
@@ -21,8 +22,6 @@ use Silarhi\CursorPagination\Iterator\ChunkIterator;
 final class ChunkIteratorTest extends TestCase
 {
     /**
-     * @dataProvider provideChunk
-     *
      * @param iterable<int, mixed> $data
      * @param array<int, mixed>    $expectedYields
      */
@@ -54,7 +53,10 @@ final class ChunkIteratorTest extends TestCase
             ],
         ];
 
-        $yield = fn () => yield from [1, 2, 3, 4, 5];
+        $yield = /**
+         * @psalm-return Generator<int<0, 4>, int, mixed, null>
+         */
+        static fn (): Generator => yield from [1, 2, 3, 4, 5];
         yield [
             'data' => $yield(),
             'size' => 2,

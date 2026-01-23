@@ -150,7 +150,7 @@ final class CursorPaginationTest extends DoctrineTestCase
         yield [false, false];
     }
 
-    #[DataProvider('provideInverse')]
+    #[DataProvider('provideLoadResults')]
     public function testCount(bool $loadResultsBeforeCount): void
     {
         $pagination = $this->getSimpleCursorPagination();

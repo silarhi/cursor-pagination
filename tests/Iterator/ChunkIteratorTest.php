@@ -52,7 +52,7 @@ final class ChunkIteratorTest extends TestCase
             ],
         ];
 
-        $yield = fn () => yield from [1, 2, 3, 4, 5];
+        $yield = static fn () => yield from [1, 2, 3, 4, 5];
         yield [
             'data' => $yield(),
             'size' => 2,

@@ -41,7 +41,7 @@ final class OrderConfigurations implements IteratorAggregate, Countable, ArrayAc
 
     public function remove(OrderConfiguration $orderConfiguration): void
     {
-        $this->orderConfigurations = array_values(array_filter($this->orderConfigurations, fn (OrderConfiguration $oc) => $oc !== $orderConfiguration));
+        $this->orderConfigurations = array_values(array_filter($this->orderConfigurations, static fn (OrderConfiguration $oc) => $oc !== $orderConfiguration));
     }
 
     public function clear(): void

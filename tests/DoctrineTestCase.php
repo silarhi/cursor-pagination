@@ -23,6 +23,7 @@ use Doctrine\ORM\Tools\SchemaTool;
 
 use function extension_loaded;
 
+use Override;
 use PHPUnit\Framework\TestCase;
 use Silarhi\CursorPagination\Tests\Fixtures\UserDataLoader;
 
@@ -30,6 +31,7 @@ abstract class DoctrineTestCase extends TestCase
 {
     protected EntityManagerInterface $entityManager;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();

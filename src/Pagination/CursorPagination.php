@@ -23,6 +23,7 @@ use Doctrine\ORM\Tools\Pagination\Paginator;
 use Generator;
 use IteratorAggregate;
 use LogicException;
+use Override;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Iterator\ChunkIterator;
 
@@ -57,11 +58,13 @@ final class CursorPagination implements IteratorAggregate, Countable
             : (int) ceil($this->count() / $this->maxPerPages);
     }
 
+    #[Override]
     public function getIterator(): Generator
     {
         return $this->getResults();
     }
 
+    #[Override]
     public function count(): int
     {
         if (null === $this->nbResults) {

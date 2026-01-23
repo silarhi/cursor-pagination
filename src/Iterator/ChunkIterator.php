@@ -15,6 +15,7 @@ namespace Silarhi\CursorPagination\Iterator;
 use function count;
 
 use IteratorAggregate;
+use Override;
 use Traversable;
 
 /**
@@ -35,6 +36,7 @@ final readonly class ChunkIterator implements IteratorAggregate
     /**
      * @return Traversable<int, array<TKey, TValue>>
      */
+    #[Override]
     public function getIterator(): Traversable
     {
         $results = [];

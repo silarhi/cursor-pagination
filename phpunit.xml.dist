@@ -5,7 +5,7 @@
          executionOrder="random"
          resolveDependencies="true"
          colors="true"
-         cacheDirectory=".phpunit.cache"
+         cacheDirectory="var/tools/.phpunit.cache"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd">
   <testsuites>
     <testsuite name="Test Suite">

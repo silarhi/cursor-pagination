@@ -11,9 +11,9 @@ declare(strict_types=1);
  */
 
 use Rector\Config\RectorConfig;
-use Rector\Doctrine\Set\DoctrineSetList;
 
 return RectorConfig::configure()
+    ->withCache(__DIR__ . '/var/tools/rector')
     ->withImportNames()
     ->withPaths([
         __DIR__ . '/src',
@@ -22,9 +22,11 @@ return RectorConfig::configure()
     ->withPhpSets()
     ->withPreparedSets(
         deadCode: true,
-        codeQuality: true
+        codeQuality: true,
+        doctrineCodeQuality: true,
     )
-    ->withSets([
-        DoctrineSetList::DOCTRINE_CODE_QUALITY,
-    ])
+    ->withComposerBased(
+        doctrine: true,
+        phpunit: true,
+    )
 ;

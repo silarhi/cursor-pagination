@@ -52,6 +52,7 @@ abstract class DoctrineTestCase extends TestCase
             isDevMode: true,
         );
         $config->setEntityNamespaces(['CursorPagination' => 'Silarhi\CursorPagination\Tests\Entity']);
+        $config->enableNativeLazyObjects(true);
         $entityManager = new EntityManager($connection, $config);
 
         $schemaTool = new SchemaTool($entityManager);

@@ -1,36 +1,43 @@
 {
-    "name": "silarhi/cursor-pagination",
-    "description": "A doctrine ORM cursor based pagination library for faster batch operations.",
-    "keywords": ["doctrine", "orm", "pagination", "cursor", "cursor-pagination"],
-    "type": "library",
-    "require": {
-        "php": ">=8.2",
-        "doctrine/orm": "^3.0"
-    },
-    "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.94",
-        "phpunit/phpunit": "^10.5.20|^11.1.3|^12|^13",
-        "phpstan/phpstan": "^2",
-        "rector/rector": "^2",
-        "vimeo/psalm": "^5.26|^6",
-        "doctrine/data-fixtures": "^2.0",
-        "symfony/cache": "^7.0|^8.0"
-    },
-    "license": "MIT",
-    "autoload": {
-        "psr-4": {
-            "Silarhi\\CursorPagination\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Silarhi\\CursorPagination\\Tests\\": "tests/"
-        }
-    },
-    "authors": [
-        {
-            "name": "SILARHI",
-            "email": "dev@silarhi.fr"
-        }
-    ]
+  "name": "silarhi/cursor-pagination",
+  "description": "A doctrine ORM cursor based pagination library for faster batch operations.",
+  "keywords": [
+    "doctrine",
+    "orm",
+    "pagination",
+    "cursor",
+    "cursor-pagination"
+  ],
+  "type": "library",
+  "require": {
+    "php": ">=8.2",
+    "doctrine/orm": "^3.0"
+  },
+  "require-dev": {
+    "doctrine/data-fixtures": "^2.0",
+    "friendsofphp/php-cs-fixer": "^3.94",
+    "phpstan/phpstan": "^2",
+    "phpstan/phpstan-strict-rules": "^2.0",
+    "phpunit/phpunit": "^11.5|^12|^13",
+    "rector/rector": "^2",
+    "symfony/cache": "^7.0|^8.0",
+    "vimeo/psalm": "^5.26|^6"
+  },
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Silarhi\\CursorPagination\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Silarhi\\CursorPagination\\Tests\\": "tests/"
+    }
+  },
+  "authors": [
+    {
+      "name": "SILARHI",
+      "email": "dev@silarhi.fr"
+    }
+  ]
 }

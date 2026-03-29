@@ -30,7 +30,7 @@ foreach($pagination->getChunkResults() as $results) {
     foreach($results as $user) {
         // do something with user
     }
-    
+
     $entityManager->flush();
     $entityManager->clear();
 }
@@ -41,3 +41,4 @@ foreach($pagination->getResults() as $user) {
 }
 
 ``
+```

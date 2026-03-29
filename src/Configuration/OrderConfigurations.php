@@ -82,7 +82,7 @@ final class OrderConfigurations implements IteratorAggregate, Countable, ArrayAc
     #[Override]
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        $this->orderConfigurations[$offset] = $value;
+        $this->orderConfigurations[(int) $offset] = $value;
     }
 
     #[Override]

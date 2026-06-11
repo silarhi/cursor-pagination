@@ -1,6 +1,8 @@
 {
     "name": "silarhi/cursor-pagination",
     "description": "A doctrine ORM cursor based pagination library for faster batch operations.",
+    "license": "MIT",
+    "type": "library",
     "keywords": [
         "doctrine",
         "orm",
@@ -8,22 +10,27 @@
         "cursor",
         "cursor-pagination"
     ],
-    "type": "library",
+    "authors": [
+        {
+            "name": "SILARHI",
+            "email": "dev@silarhi.fr"
+        }
+    ],
     "require": {
         "php": ">=8.2",
         "doctrine/orm": "^3.0"
     },
     "require-dev": {
         "doctrine/data-fixtures": "^2.0",
+        "ergebnis/composer-normalize": "^2.52",
         "friendsofphp/php-cs-fixer": "^3.94",
         "phpstan/phpstan": "^2",
         "phpstan/phpstan-strict-rules": "^2.0",
-        "phpunit/phpunit": "^11.5|^12|^13",
+        "phpunit/phpunit": "^11.5 || ^12 || ^13",
         "rector/rector": "^2",
-        "symfony/cache": "^7.0|^8.0",
-        "vimeo/psalm": "^5.26|^6"
+        "symfony/cache": "^7.0 || ^8.0",
+        "vimeo/psalm": "^5.26 || ^6"
     },
-    "license": "MIT",
     "autoload": {
         "psr-4": {
             "Silarhi\\CursorPagination\\": "src/"
@@ -34,10 +41,9 @@
             "Silarhi\\CursorPagination\\Tests\\": "tests/"
         }
     },
-    "authors": [
-        {
-            "name": "SILARHI",
-            "email": "dev@silarhi.fr"
+    "config": {
+        "allow-plugins": {
+            "ergebnis/composer-normalize": true
         }
-    ]
+    }
 }

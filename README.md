@@ -15,11 +15,11 @@ use Silarhi\CursorPagination\Pagination\CursorPagination;
 $queryBuilder = $entityManager
     ->createQueryBuilder('u')
     ->from(User::class, 'u')
-    ->where('u.foo = true');
+    ->where('u.enabled = true');
 
 $configurations = new OrderConfigurations(
-    new OrderConfiguration('u.createdAt', fn (User $user) => $user->getCreatedAt()),
-    new OrderConfiguration('u.id', fn (User $user) => $user->getId()),
+    new OrderConfiguration('u.createdAt', static fn (User $user): string => $user->getCreatedAt()),
+    new OrderConfiguration('u.id', static fn (User $user): int => $user->getId()),
 );
 
 /** @var CursorPagination<User> $pagination */
@@ -28,7 +28,7 @@ $pagination = new CursorPagination($queryBuilder, $configurations, 100);
 // Method 1: get results as chunk (recommended)
 foreach($pagination->getChunkResults() as $results) {
     foreach($results as $user) {
-        // do something with user
+         $user->setEnabled(false);
     }
 
     $entityManager->flush();

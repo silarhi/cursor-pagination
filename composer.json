@@ -45,6 +45,7 @@
         "allow-plugins": {
             "ergebnis/composer-normalize": true
         },
+        "bump-after-update": "dev",
         "sort-packages": true
     }
 }

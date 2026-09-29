@@ -22,7 +22,7 @@
     },
     "require-dev": {
         "doctrine/data-fixtures": "^2.2.1",
-        "ergebnis/composer-normalize": "^2.52",
+        "ergebnis/composer-normalize": "^2.54.0",
         "friendsofphp/php-cs-fixer": "^3.95.27",
         "phpstan/phpstan": "^2.2.16",
         "phpstan/phpstan-strict-rules": "^2.0.12",

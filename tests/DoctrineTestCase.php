@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Silarhi\CursorPagination\Tests;
 
+use Composer\InstalledVersions;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
@@ -54,7 +55,7 @@ abstract class DoctrineTestCase extends TestCase
         $config->setEntityNamespaces(['CursorPagination' => 'Silarhi\CursorPagination\Tests\Entity']);
         // Native lazy objects need PHP 8.4 and doctrine/orm 3.4+; older ORM versions
         // (tested by the lowest-dependencies CI job) keep using proxy classes.
-        if (\PHP_VERSION_ID >= 80400 && method_exists($config, 'enableNativeLazyObjects')) {
+        if (\PHP_VERSION_ID >= 80400 && version_compare(InstalledVersions::getVersion('doctrine/orm') ?? '0', '3.4.0', '>=')) {
             $config->enableNativeLazyObjects(true);
         }
         $entityManager = new EntityManager($connection, $config);

@@ -14,6 +14,7 @@ namespace Silarhi\CursorPagination\Tests\Pagination;
 
 use function count;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Silarhi\CursorPagination\Configuration\OrderConfiguration;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
@@ -179,10 +180,138 @@ final class CursorPaginationTest extends DoctrineTestCase
         self::assertEquals(5, $pagination->getNbPages());
     }
 
+    public function testGetIterator(): void
+    {
+        $pagination = $this->getSimpleCursorPagination();
+
+        $ids = [];
+        foreach ($pagination as $result) {
+            self::assertInstanceOf(User::class, $result);
+            $ids[] = $result->getId();
+        }
+
+        self::assertSame(range(1, 10), $ids);
+    }
+
+    #[DataProvider('provideMaxPerPages')]
+    public function testPaginationWithIncompleteLastPage(int $maxPerPages, int $expectedChunks): void
+    {
+        $pagination = $this->getSimpleCursorPagination($maxPerPages);
+
+        $ids = array_map(static fn (User $user): ?int => $user->getId(), iterator_to_array($pagination->getResults(), false));
+        self::assertSame(range(1, 10), $ids);
+
+        $chunkSizes = [];
+        foreach ($pagination->getChunkResults() as $results) {
+            $chunkSizes[] = count($results);
+        }
+        self::assertCount($expectedChunks, $chunkSizes);
+        self::assertSame(10, array_sum($chunkSizes));
+        self::assertSame($expectedChunks, $pagination->getNbPages());
+    }
+
+    /**
+     * @return iterable<string, array{maxPerPages: int, expectedChunks: int}>
+     */
+    public static function provideMaxPerPages(): iterable
+    {
+        yield 'last page with a single result' => ['maxPerPages' => 3, 'expectedChunks' => 4];
+        yield 'last page with two results' => ['maxPerPages' => 4, 'expectedChunks' => 3];
+        yield 'exact number of results' => ['maxPerPages' => 10, 'expectedChunks' => 1];
+        yield 'everything in the first page' => ['maxPerPages' => 100, 'expectedChunks' => 1];
+    }
+
+    public function testEmptyResults(): void
+    {
+        $queryBuilder = $this
+            ->entityManager
+            ->getRepository(User::class)
+            ->createQueryBuilder('u')
+            ->where('u.id > :id')
+            ->setParameter('id', 100)
+        ;
+
+        /** @var CursorPagination<User> $pagination */
+        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+            new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
+        ), 2);
+
+        self::assertSame([], iterator_to_array($pagination->getResults()));
+        self::assertSame([], iterator_to_array($pagination->getChunkResults()));
+        self::assertSame(0, $pagination->count());
+        self::assertSame(0, $pagination->getNbPages());
+    }
+
+    #[DataProvider('provideInvalidMaxPerPages')]
+    public function testGetNbPagesWithoutPositiveMaxPerPages(int $maxPerPages): void
+    {
+        $pagination = $this->getSimpleCursorPagination($maxPerPages);
+
+        self::assertSame(0, $pagination->getNbPages());
+    }
+
+    /**
+     * @return iterable<int, array<int, int>>
+     */
+    public static function provideInvalidMaxPerPages(): iterable
+    {
+        yield [0];
+        yield [-1];
+    }
+
+    public function testSingleNonUniqueOrderConfigurationThrowsWhenCursorIsApplied(): void
+    {
+        $queryBuilder = $this
+            ->entityManager
+            ->getRepository(User::class)
+            ->createQueryBuilder('u')
+        ;
+
+        /** @var CursorPagination<User> $pagination */
+        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+            new OrderConfiguration('u.tenantId', static fn (User $user) => $user->getTenantId(), isUnique: false),
+        ), 2);
+
+        $ids = [];
+
+        try {
+            foreach ($pagination->getResults() as $result) {
+                $ids[] = $result->getId();
+            }
+        } catch (LogicException $logicException) {
+            self::assertSame('When using a single order configuration, it must be unique', $logicException->getMessage());
+            // The first page is fetched without any cursor, the exception is thrown when fetching the second one
+            self::assertCount(2, $ids);
+
+            return;
+        }
+
+        self::fail('A LogicException should have been thrown.');
+    }
+
+    public function testNonUniqueOrderConfigurationIsAllowedWithOtherConfigurations(): void
+    {
+        $queryBuilder = $this
+            ->entityManager
+            ->getRepository(User::class)
+            ->createQueryBuilder('u')
+        ;
+
+        /** @var CursorPagination<User> $pagination */
+        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+            new OrderConfiguration('u.tenantId', static fn (User $user) => $user->getTenantId(), isUnique: false),
+            new OrderConfiguration('u.id', static fn (User $user) => $user->getId(), isUnique: true),
+        ), 2);
+
+        $ids = array_map(static fn (User $user): ?int => $user->getId(), iterator_to_array($pagination->getResults(), false));
+
+        self::assertSame([1, 2, 3, 7, 8, 9, 4, 5, 6, 10], $ids);
+    }
+
     /**
      * @return CursorPagination<User>
      */
-    private function getSimpleCursorPagination(): CursorPagination
+    private function getSimpleCursorPagination(int $maxPerPages = 2): CursorPagination
     {
         $queryBuilder = $this
             ->entityManager
@@ -192,7 +321,7 @@ final class CursorPaginationTest extends DoctrineTestCase
         /** @var CursorPagination<User> $pagination */
         $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
             new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
-        ), 2);
+        ), $maxPerPages);
 
         return $pagination;
     }

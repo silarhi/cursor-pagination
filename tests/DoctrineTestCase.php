@@ -52,7 +52,11 @@ abstract class DoctrineTestCase extends TestCase
             isDevMode: true,
         );
         $config->setEntityNamespaces(['CursorPagination' => 'Silarhi\CursorPagination\Tests\Entity']);
-        $config->enableNativeLazyObjects(true);
+        // Native lazy objects need PHP 8.4 and doctrine/orm 3.4+; older ORM versions
+        // (tested by the lowest-dependencies CI job) keep using proxy classes.
+        if (\PHP_VERSION_ID >= 80400 && method_exists($config, 'enableNativeLazyObjects')) {
+            $config->enableNativeLazyObjects(true);
+        }
         $entityManager = new EntityManager($connection, $config);
 
         $schemaTool = new SchemaTool($entityManager);

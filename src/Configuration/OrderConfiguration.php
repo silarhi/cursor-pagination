@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Silarhi\CursorPagination\Configuration;
 
 use Closure;
-use Doctrine\Common\Collections\Criteria;
 
 final readonly class OrderConfiguration
 {
@@ -37,7 +36,7 @@ final readonly class OrderConfiguration
 
     public function getOrderByExpression(): string
     {
-        return $this->orderAscending ? Criteria::ASC : Criteria::DESC;
+        return $this->orderAscending ? 'ASC' : 'DESC';
     }
 
     public function getFieldName(): string

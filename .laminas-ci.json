@@ -1,4 +1,5 @@
 {
+    "extensions": ["sqlite3"],
     "additional_checks": [
         {
             "name": "Composer validate & normalize",

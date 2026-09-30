@@ -308,6 +308,92 @@ final class CursorPaginationTest extends DoctrineTestCase
         self::assertSame([1, 2, 3, 7, 8, 9, 4, 5, 6, 10], $ids);
     }
 
+    #[DataProvider('provideBreakAfter')]
+    public function testStoppingAnIterationEarlyDoesNotAffectTheNextOne(int $breakAfter): void
+    {
+        $pagination = $this->getSimpleCursorPagination();
+
+        $ids = [];
+        foreach ($pagination->getResults() as $result) {
+            $ids[] = $result->getId();
+            if (count($ids) === $breakAfter) {
+                break;
+            }
+        }
+        self::assertSame(range(1, $breakAfter), $ids);
+
+        $ids = array_map(static fn (User $user): ?int => $user->getId(), iterator_to_array($pagination->getResults(), false));
+        self::assertSame(range(1, 10), $ids);
+
+        foreach ($pagination as $result) {
+            self::assertInstanceOf(User::class, $result);
+            self::assertSame(1, $result->getId());
+            break;
+        }
+
+        $ids = [];
+        foreach ($pagination as $result) {
+            self::assertInstanceOf(User::class, $result);
+            $ids[] = $result->getId();
+        }
+        self::assertSame(range(1, 10), $ids);
+
+        foreach ($pagination->getChunkResults() as $results) {
+            self::assertSame([1, 2], array_map(static fn (User $user): ?int => $user->getId(), $results));
+            break;
+        }
+
+        $ids = [];
+        foreach ($pagination->getChunkResults() as $results) {
+            foreach ($results as $result) {
+                $ids[] = $result->getId();
+            }
+        }
+        self::assertSame(range(1, 10), $ids);
+
+        self::assertSame(10, $pagination->count());
+        self::assertSame(5, $pagination->getNbPages());
+    }
+
+    /**
+     * @return iterable<string, array{breakAfter: int}>
+     */
+    public static function provideBreakAfter(): iterable
+    {
+        yield 'inside the first page' => ['breakAfter' => 1];
+        yield 'at the end of the first page' => ['breakAfter' => 2];
+        yield 'inside a following page' => ['breakAfter' => 5];
+    }
+
+    public function testInterleavedIterationsDoNotShareTheirCursor(): void
+    {
+        $pagination = $this->getSimpleCursorPagination();
+
+        $first = $pagination->getResults();
+        $second = $pagination->getResults();
+
+        $firstIds = [];
+        $secondIds = [];
+        while ($first->valid() || $second->valid()) {
+            if ($first->valid()) {
+                $user = $first->current();
+                self::assertInstanceOf(User::class, $user);
+                $firstIds[] = $user->getId();
+                $first->next();
+            }
+
+            if ($second->valid()) {
+                $user = $second->current();
+                self::assertInstanceOf(User::class, $user);
+                $secondIds[] = $user->getId();
+                $second->next();
+            }
+        }
+
+        self::assertSame(range(1, 10), $firstIds);
+        self::assertSame(range(1, 10), $secondIds);
+    }
+
     /**
      * @return CursorPagination<User>
      */

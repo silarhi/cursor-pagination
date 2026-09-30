@@ -36,9 +36,6 @@ use function sprintf;
  */
 final class CursorPagination implements IteratorAggregate, Countable
 {
-    /** @var array<int|string, mixed> */
-    private array $afterValues = [];
-
     /** @var int<0, max>|null */
     private ?int $nbResults = null;
 
@@ -101,11 +98,14 @@ final class CursorPagination implements IteratorAggregate, Countable
             );
         }
 
+        // The cursor is local to this generator so that every iteration starts from the beginning,
+        // even if a previous one was stopped early, and concurrent iterations do not share it
+        $afterValues = [];
         while (true) {
             $queryBuilder = clone $baseQueryBuilder;
 
-            if ([] !== $this->afterValues) {
-                $this->applyCursor($queryBuilder);
+            if ([] !== $afterValues) {
+                $this->applyCursor($queryBuilder, $afterValues);
             }
 
             $paginator = new Paginator($queryBuilder, $this->fetchJoinCollection);
@@ -118,7 +118,7 @@ final class CursorPagination implements IteratorAggregate, Countable
 
             // Update cursor value before actually yielding results in order to avoid data loss
             $lastResult = $results[array_key_last($results)];
-            $this->updateCursorValues($lastResult);
+            $afterValues = $this->getCursorValues($lastResult);
 
             $yieldResults = 0;
             foreach ($results as $result) {
@@ -130,11 +130,12 @@ final class CursorPagination implements IteratorAggregate, Countable
                 break;
             }
         }
-
-        $this->resetCursorValues();
     }
 
-    private function applyCursor(QueryBuilder $queryBuilder): void
+    /**
+     * @param array<int|string, mixed> $afterValues
+     */
+    private function applyCursor(QueryBuilder $queryBuilder, array $afterValues): void
     {
         $whereClause = new Orx();
         $previousConditions = new Andx();
@@ -154,7 +155,7 @@ final class CursorPagination implements IteratorAggregate, Countable
                 $cursorParameterName,
             ));
 
-            $queryBuilder->setParameter($cursorParameterName, $this->afterValues[$index]);
+            $queryBuilder->setParameter($cursorParameterName, $afterValues[$index]);
 
             $whereClause->add($currentCondition);
 
@@ -168,16 +169,17 @@ final class CursorPagination implements IteratorAggregate, Countable
         $queryBuilder->andWhere($whereClause);
     }
 
-    private function resetCursorValues(): void
+    /**
+     * @return array<int|string, mixed>
+     */
+    private function getCursorValues(mixed $item): array
     {
-        $this->afterValues = [];
-    }
-
-    private function updateCursorValues(mixed $item): void
-    {
+        $afterValues = [];
         foreach ($this->orderConfigurations as $index => $orderConfiguration) {
             $valueGetter = $orderConfiguration->getFieldValueGetter();
-            $this->afterValues[$index] = $valueGetter($item);
+            $afterValues[$index] = $valueGetter($item);
         }
+
+        return $afterValues;
     }
 }

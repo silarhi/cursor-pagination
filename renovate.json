@@ -17,6 +17,12 @@
             "matchManagers": ["composer"],
             "matchDepTypes": ["require-dev"],
             "rangeStrategy": "bump"
+        },
+        {
+            "description": "doctrine/orm is tested against its minimal version: never raise the lower bound, only widen for new majors",
+            "matchManagers": ["composer"],
+            "matchPackageNames": ["doctrine/orm"],
+            "rangeStrategy": "widen"
         }
     ]
 }

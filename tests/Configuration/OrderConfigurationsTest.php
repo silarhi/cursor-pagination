@@ -14,9 +14,12 @@ namespace Silarhi\CursorPagination\Tests\Configuration;
 
 use function count;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Silarhi\CursorPagination\Configuration\OrderConfiguration;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
+
+use function sprintf;
 
 final class OrderConfigurationsTest extends TestCase
 {
@@ -122,6 +125,48 @@ final class OrderConfigurationsTest extends TestCase
         self::assertCount(3, $configurations);
         self::assertSame($number, $configurations[2]);
         self::assertSame([$id, $tenantId, $number], iterator_to_array($configurations));
+    }
+
+    public function testOffsetSetWithoutOffsetAppends(): void
+    {
+        $id = $this->createOrderConfiguration('u.id');
+        $number = $this->createOrderConfiguration('u.number');
+        $tenantId = $this->createOrderConfiguration('u.tenantId');
+
+        $configurations = new OrderConfigurations($id);
+        $configurations[] = $number;
+        $configurations[] = $tenantId;
+
+        self::assertCount(3, $configurations);
+        self::assertSame([$id, $number, $tenantId], $configurations->getOrderConfigurations());
+    }
+
+    public function testOffsetSetWithoutOffsetOnEmptyConfigurations(): void
+    {
+        $id = $this->createOrderConfiguration('u.id');
+
+        $configurations = new OrderConfigurations();
+        $configurations[] = $id;
+
+        self::assertCount(1, $configurations);
+        self::assertSame([$id], $configurations->getOrderConfigurations());
+    }
+
+    public function testOffsetSetRejectsInvalidValues(): void
+    {
+        $id = $this->createOrderConfiguration('u.id');
+        $configurations = new OrderConfigurations($id);
+
+        try {
+            $configurations[] = 'u.number';
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            self::assertSame(sprintf('Expected an instance of "%s", got "string".', OrderConfiguration::class), $invalidArgumentException->getMessage());
+            self::assertSame([$id], $configurations->getOrderConfigurations());
+
+            return;
+        }
+
+        self::fail('An InvalidArgumentException should have been thrown.');
     }
 
     public function testOffsetUnset(): void

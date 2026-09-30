@@ -18,8 +18,11 @@ use ArrayIterator;
 use function count;
 
 use Countable;
+use InvalidArgumentException;
 use IteratorAggregate;
 use Override;
+
+use function sprintf;
 
 /**
  * @implements IteratorAggregate<int, OrderConfiguration>
@@ -79,9 +82,22 @@ final class OrderConfigurations implements IteratorAggregate, Countable, ArrayAc
         return $this->orderConfigurations[$offset];
     }
 
+    /**
+     * @param mixed $value validated at runtime as array access bypasses the native type of add()
+     */
     #[Override]
     public function offsetSet(mixed $offset, mixed $value): void
     {
+        if (!$value instanceof OrderConfiguration) {
+            throw new InvalidArgumentException(sprintf('Expected an instance of "%s", got "%s".', OrderConfiguration::class, get_debug_type($value)));
+        }
+
+        if (null === $offset) {
+            $this->add($value);
+
+            return;
+        }
+
         $this->orderConfigurations[(int) $offset] = $value;
     }
 

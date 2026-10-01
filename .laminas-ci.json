@@ -2,6 +2,9 @@
     "extensions": ["pcov", "sqlite3"],
     "exclude": [
         {
+            "name": "README Linting"
+        },
+        {
             "name": "PHPUnit",
             "php": "8.6"
         }

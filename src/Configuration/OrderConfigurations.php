@@ -19,6 +19,9 @@ use function count;
 
 use Countable;
 use InvalidArgumentException;
+
+use function is_int;
+
 use IteratorAggregate;
 use Override;
 
@@ -30,9 +33,12 @@ use function sprintf;
  */
 final class OrderConfigurations implements IteratorAggregate, Countable, ArrayAccess
 {
-    /** @var array<int|string, OrderConfiguration> */
+    /** @var array<int, OrderConfiguration> */
     private array $orderConfigurations;
 
+    /**
+     * @no-named-arguments
+     */
     public function __construct(OrderConfiguration ...$orderConfigurations)
     {
         $this->orderConfigurations = $orderConfigurations;
@@ -54,7 +60,7 @@ final class OrderConfigurations implements IteratorAggregate, Countable, ArrayAc
     }
 
     /**
-     * @return array<int|string, OrderConfiguration>
+     * @return array<int, OrderConfiguration>
      */
     public function getOrderConfigurations(): array
     {
@@ -62,7 +68,7 @@ final class OrderConfigurations implements IteratorAggregate, Countable, ArrayAc
     }
 
     /**
-     * @return ArrayIterator<int|string, OrderConfiguration>
+     * @return ArrayIterator<int, OrderConfiguration>
      */
     #[Override]
     public function getIterator(): ArrayIterator
@@ -83,7 +89,8 @@ final class OrderConfigurations implements IteratorAggregate, Countable, ArrayAc
     }
 
     /**
-     * @param mixed $value validated at runtime as array access bypasses the native type of add()
+     * @param mixed $offset validated at runtime: keys must stay integers (they number the cursor parameters)
+     * @param mixed $value  validated at runtime as array access bypasses the native type of add()
      */
     #[Override]
     public function offsetSet(mixed $offset, mixed $value): void
@@ -98,7 +105,11 @@ final class OrderConfigurations implements IteratorAggregate, Countable, ArrayAc
             return;
         }
 
-        $this->orderConfigurations[(int) $offset] = $value;
+        if (!is_int($offset)) {
+            throw new InvalidArgumentException(sprintf('Expected an int offset, got "%s".', get_debug_type($offset)));
+        }
+
+        $this->orderConfigurations[$offset] = $value;
     }
 
     #[Override]

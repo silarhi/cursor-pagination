@@ -169,6 +169,23 @@ final class OrderConfigurationsTest extends TestCase
         self::fail('An InvalidArgumentException should have been thrown.');
     }
 
+    public function testOffsetSetRejectsNonIntOffsets(): void
+    {
+        $id = $this->createOrderConfiguration('u.id');
+        $configurations = new OrderConfigurations($id);
+
+        try {
+            $configurations['number'] = $this->createOrderConfiguration('u.number');
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            self::assertSame('Expected an int offset, got "string".', $invalidArgumentException->getMessage());
+            self::assertSame([$id], $configurations->getOrderConfigurations());
+
+            return;
+        }
+
+        self::fail('An InvalidArgumentException should have been thrown.');
+    }
+
     public function testOffsetUnset(): void
     {
         $id = $this->createOrderConfiguration('u.id');

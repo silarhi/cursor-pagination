@@ -17,6 +17,7 @@ use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Logging\Middleware;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\ORMSetup;
@@ -32,6 +33,8 @@ abstract class DoctrineTestCase extends TestCase
 {
     protected EntityManagerInterface $entityManager;
 
+    protected QueryCounter $queryCounter;
+
     #[Override]
     protected function setUp(): void
     {
@@ -41,16 +44,19 @@ abstract class DoctrineTestCase extends TestCase
             self::markTestSkipped('Extension pdo_sqlite is required.');
         }
 
+        $config = ORMSetup::createAttributeMetadataConfiguration(
+            paths: [__DIR__ . '/Entity'],
+            isDevMode: true,
+        );
+        $this->queryCounter = new QueryCounter();
+        $config->setMiddlewares([new Middleware($this->queryCounter)]);
+
         $connection = DriverManager::getConnection(
             [
                 'driver' => 'pdo_sqlite',
                 'memory' => true,
-            ]
-        );
-
-        $config = ORMSetup::createAttributeMetadataConfiguration(
-            paths: [__DIR__ . '/Entity'],
-            isDevMode: true,
+            ],
+            $config,
         );
         $config->setEntityNamespaces(['CursorPagination' => 'Silarhi\CursorPagination\Tests\Entity']);
         // Native lazy objects need PHP 8.4 and doctrine/orm 3.4+; older ORM versions

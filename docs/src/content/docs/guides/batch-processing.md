@@ -103,6 +103,7 @@ $pagination = new CursorPagination(
 ```
 
 :::caution
-Leave the first result (`setFirstResult()`) of the `QueryBuilder` unset: it is not reset, so the offset would apply to
-every page and skip rows. Its max results are replaced by `$maxPerPages`.
+Leave the first result (`setFirstResult()`) of the `QueryBuilder` unset: `getResults()` and `count()` throw a
+`LogicException` when it is set, since the offset would apply to every page and skip rows. Before 2.3.0, it was kept
+silently. Its max results are replaced by `$maxPerPages`.
 :::

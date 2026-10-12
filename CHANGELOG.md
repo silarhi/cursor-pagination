@@ -5,11 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - Unreleased
+
+### Changed
+
+- The automatic `fetchJoinCollection` detection parses the query: it is only enabled for collection (to-many) joins and arbitrary joins (`JOIN Entity e WITH …`). A query with to-one joins only, a `SELECT DISTINCT` of the root entity, or a query that only selects scalar fields, takes one query per page instead of two.
+- `count()` runs a plain `COUNT(*)` when no join can duplicate the rows, instead of `COUNT(DISTINCT id)` wrapped in subqueries by the output walkers. On a query that only selects scalar fields, it counts the rows (joined rows included), or the groups of a grouped query, without `useOutputWalkers: false`.
+- Order configurations all declared `isUnique: false` throw a `LogicException`, with several configurations too. The check, and the one for a single configuration, run before the first page instead of the second.
+- An empty `OrderConfigurations` throws a `LogicException`, instead of fetching the first page again and again.
+- A `QueryBuilder` with a first result (`setFirstResult()`) makes `getResults()` and `count()` throw a `LogicException`: the offset was applied to every page, skipping rows on each of them.
+
 ## [2.2.0] - 2026-10-12
 
 ### Changed
 
-- `CursorPagination`'s `$fetchJoinCollection` argument defaults to `null` (auto) instead of `true`: Doctrine's fetch-join-collection strategy is only used when the query has joins or several root entities, the only cases where root rows can be duplicated. Without joins, a page takes 1 query instead of 2 (a `SELECT DISTINCT id … LIMIT` then `… WHERE id IN (…)`), 4 to 7 times faster on MySQL and PostgreSQL, and `count()` runs a plain `COUNT` instead of `COUNT(DISTINCT id)`. The results are the same. Any join enables it, even a many-to-one one. Pass `true` to keep the previous behaviour; an explicit `true` or `false` is honoured as before. The parameter type is now `?bool`.
+- `CursorPagination`'s `$fetchJoinCollection` argument defaults to `null` (auto) instead of `true`: Doctrine's fetch-join-collection strategy is only used when the query has joins or several root entities, the only cases where root rows can be duplicated. Without joins, a page takes 1 query instead of 2 (a `SELECT DISTINCT id … LIMIT` then `… WHERE id IN (…)`), 4 to 7 times faster on MySQL and PostgreSQL. The results are the same. `count()` is unchanged: Doctrine's `Paginator` always counts distinct root entities, whatever `fetchJoinCollection` is (this entry first said otherwise). Any join enables it, even a many-to-one one. Pass `true` to keep the previous behaviour; an explicit `true` or `false` is honoured as before. The parameter type is now `?bool`.
 - Composite cursors add a redundant range bound on their leading column: for an order on `(a, b)`, `a >= :x AND (a > :x OR (a = :x AND b > :y))` (`<=` when descending). It never changes which rows match, but lets PostgreSQL seek an index on the leading column instead of scanning it from its first entry on every page.
 - `OrderConfigurations` throws an `InvalidArgumentException` when an offset that is not an integer is set through array access (`$configurations['foo'] = …`), instead of casting it to an integer.
 
@@ -83,6 +93,7 @@ First release: cursor-based (keyset) pagination over a Doctrine ORM `QueryBuilde
 - `CursorPagination`, configured by an `OrderConfigurations` collection of `OrderConfiguration`s (a DQL field, a closure reading its value from a result, the direction, and whether it is unique). `getResults()` yields the results one by one and `getChunkResults()` by pages of `$maxPerPages` (100 by default), each page fetched with `WHERE` conditions on the last row of the previous one instead of an `OFFSET`.
 - `ChunkIterator`, which splits any iterable into arrays of a given size.
 
+[2.3.0]: https://github.com/silarhi/cursor-pagination/compare/2.2.0...main
 [2.2.0]: https://github.com/silarhi/cursor-pagination/compare/2.1.1...2.2.0
 [2.1.1]: https://github.com/silarhi/cursor-pagination/compare/2.1.0...2.1.1
 [2.1.0]: https://github.com/silarhi/cursor-pagination/compare/2.0.0...2.1.0

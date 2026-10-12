@@ -26,6 +26,7 @@ new OrderConfiguration(
   build the cursor, so it must return the value that was read from the database, in a type Doctrine can bind as a
   parameter (an `int`, a `string`, a `DateTimeImmutable`…).
 - **The direction**: `orderAscending: false` sorts descending, and the cursor then looks for smaller values.
+- **`isUnique`**: see [the isUnique flag](#the-isunique-flag).
 
 ```php
 new OrderConfiguration('u.createdAt', static fn (User $user) => $user->getCreatedAt(), orderAscending: false);
@@ -48,14 +49,20 @@ A single field that is unique on its own (`u.id`, a unique `u.email`) needs noth
 
 ### The isUnique flag
 
-`isUnique` is only checked in one case: a single configuration declared with `isUnique: false` throws a
-`LogicException` ("When using a single order configuration, it must be unique") when the second page is fetched, since
-the cursor would skip rows. A query that fits in one page never reaches that check.
+`isUnique` declares whether a field is unique on its own. `CursorPagination` cannot tell whether the fields are unique
+together, so it only rejects an order that has no unique field for sure: when every configuration is declared
+`isUnique: false`, `getResults()` throws a `LogicException` before the first page.
 
 ```php
-// Throws a LogicException on the second page
+// Throws a LogicException ("When using a single order configuration, it must be unique")
 new OrderConfigurations(
     new OrderConfiguration('u.tenantId', static fn (User $user) => $user->getTenantId(), isUnique: false),
+);
+
+// Throws a LogicException ("The order configurations are all declared non-unique: …")
+new OrderConfigurations(
+    new OrderConfiguration('u.tenantId', static fn (User $user) => $user->getTenantId(), isUnique: false),
+    new OrderConfiguration('u.createdAt', static fn (User $user) => $user->getCreatedAt(), isUnique: false),
 );
 
 // Fine: the order ends with a unique field
@@ -65,14 +72,22 @@ new OrderConfigurations(
 );
 ```
 
-With several configurations, the flag is not checked: nothing stops an order that ends with a non-unique field, and
-that order skips rows silently. The default, `null`, is never checked.
+The default, `null`, is never checked: an order that ends with a non-unique field without saying so skips rows
+silently. Before 2.3.0, only a single configuration was checked, and only when the second page was fetched.
+
+An empty `OrderConfigurations` throws a `LogicException` too: without an order, there is no cursor.
 
 ## Avoid nullable fields
 
-SQL comparisons with `NULL` never match. From the second page on, rows with a `NULL` in an ordered field never match
-the cursor condition, and a `NULL` in the last row of a page makes the next condition miss rows, or all of them: those
-rows are skipped without error. Order on non-nullable columns.
+SQL comparisons with `NULL` never match: from the second page on, `u.score > :cursor` is false for every row with a
+`NULL` score, and a `NULL` in the last row of a page makes the next condition miss rows, or all of them. Those rows are
+skipped without error.
+
+:::caution[Order on non-nullable fields]
+Choosing the ordered fields is up to you: order on non-nullable columns, and end with the id, which is unique and never
+`NULL`. To read the rows with a `NULL` too, paginate them in a separate query (`WHERE u.score IS NULL`, ordered by the
+id).
+:::
 
 ## Index the order
 

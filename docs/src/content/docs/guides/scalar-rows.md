@@ -61,21 +61,29 @@ and a buffered driver such as `pdo_mysql` with its default settings holds the wh
 
 ### Joins and scalar rows
 
-Doctrine's `Paginator` throws on a scalar query with `fetchJoinCollection` enabled
-(`Paginators do not support Queries which only yield ScalarResults`). Without join, the automatic detection disables
-it. With joins, pass `fetchJoinCollection: false`, and remember that each scalar row is a SQL row: with a to-many join,
-end the order with a field that is unique per row (the joined entity's id), or rows sharing the cursor at a page
-boundary are skipped. See [fetch joins and collections](/guides/fetch-joins/).
+A query that only selects scalar fields is detected: `fetchJoinCollection` is disabled, joins or not, and every SQL row
+is a result. With a collection join, end the order with a field that is unique per row (the joined entity's id), or
+rows sharing the cursor at a page boundary are skipped:
+
+```php
+$queryBuilder = $userRepository->createQueryBuilder('u')
+    ->select('u.id AS userId, g.id AS groupId')
+    ->join('u.groups', 'g');
+
+$pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+    new OrderConfiguration('u.id', static fn (array $row): int => $row['userId']),
+    new OrderConfiguration('g.id', static fn (array $row): int => $row['groupId']),
+));
+```
+
+Before 2.3.0, a scalar query with joins needed `fetchJoinCollection: false`, or Doctrine threw `Paginators do not
+support Queries which only yield ScalarResults`. See [fetch joins and collections](/guides/fetch-joins/).
 
 ### Counting scalar rows
 
-On doctrine/orm 3.7, `count()` fails on a scalar query with the default output walkers (`Not all identifier properties
-can be found in the ResultSetMapping`). Pass `useOutputWalkers: false` if you need the count:
-
-```php
-$pagination = new CursorPagination($queryBuilder, $configurations, 1000, useOutputWalkers: false);
-$pagination->count();
-```
+`count()` counts the rows (`SELECT COUNT(*) FROM … WHERE …`), joined rows included, or the groups of a grouped query.
+Before 2.3.0, it failed on scalar queries with the default output walkers (`Not all identifier properties can be found
+in the ResultSetMapping`), unless `useOutputWalkers: false` was passed.
 
 ## Generators
 

@@ -46,8 +46,9 @@
 - **Multi-field ordering** — combine several fields, each ascending or descending, ending with a unique one.
 - **Item or chunk iteration** — iterate entity by entity, or by arrays of `maxPerPages` items for flush/clear batches.
 - **Restartable iterations** — every iteration starts from the beginning, even if a previous one was stopped early.
-- **Fetch joins handled** — one query per page without joins, Doctrine's fetch-join-collection strategy with them.
-- **Counting** — `count()` and `getNbPages()` rely on Doctrine's `Paginator`.
+- **Fetch joins handled** — one query per page, or two when the query joins a collection: the page's ids, then their rows.
+- **Query analysis** — collection joins and scalar rows are detected; misconfigured orders throw instead of skipping rows.
+- **Counting** — `count()` and `getNbPages()`, with a plain `COUNT` when no join can duplicate rows.
 
 ## Requirements
 

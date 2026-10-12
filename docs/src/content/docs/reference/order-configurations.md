@@ -26,7 +26,7 @@ public function __construct(
 | `$fieldName`        |         | The DQL field, with its alias: `u.createdAt`.                                                              |
 | `$fieldValueGetter` |         | Receives one result (entity or array) and returns the field's value, used for the cursor of the next page. |
 | `$orderAscending`   | `true`  | `false` sorts descending.                                                                                  |
-| `$isUnique`         | `null`  | `false` on a single configuration throws a `LogicException` on the second page. Not checked otherwise.     |
+| `$isUnique`         | `null`  | `false` on every configuration throws a `LogicException` before the first page.                            |
 
 | Method                   | Returns                       |
 | ------------------------ | ----------------------------- |

@@ -259,7 +259,11 @@ final class CursorPaginationTest extends DoctrineTestCase
         yield [-1];
     }
 
-    public function testSingleNonUniqueOrderConfigurationThrowsWhenCursorIsApplied(): void
+    /**
+     * @param list<OrderConfiguration> $configurations
+     */
+    #[DataProvider('provideInvalidOrderConfigurations')]
+    public function testInvalidOrderConfigurationsThrowBeforeTheFirstPage(array $configurations, string $expectedMessage): void
     {
         $queryBuilder = $this
             ->entityManager
@@ -268,25 +272,84 @@ final class CursorPaginationTest extends DoctrineTestCase
         ;
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
-            new OrderConfiguration('u.tenantId', static fn (User $user) => $user->getTenantId(), isUnique: false),
-        ), 2);
+        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(...$configurations), 2);
 
-        $ids = [];
+        $this->queryCounter->reset();
 
         try {
-            foreach ($pagination->getResults() as $result) {
-                $ids[] = $result->getId();
-            }
+            iterator_to_array($pagination->getResults());
         } catch (LogicException $logicException) {
-            self::assertSame('When using a single order configuration, it must be unique', $logicException->getMessage());
-            // The first page is fetched without any cursor, the exception is thrown when fetching the second one
-            self::assertCount(2, $ids);
+            self::assertSame($expectedMessage, $logicException->getMessage());
+            self::assertSame(0, $this->queryCounter->count);
 
             return;
         }
 
         self::fail('A LogicException should have been thrown.');
+    }
+
+    /**
+     * @return iterable<string, array{list<OrderConfiguration>, string}>
+     */
+    public static function provideInvalidOrderConfigurations(): iterable
+    {
+        yield 'no configuration' => [[], 'At least one order configuration is required.'];
+        yield 'single non-unique configuration' => [
+            [new OrderConfiguration('u.tenantId', static fn (User $user) => $user->getTenantId(), isUnique: false)],
+            'When using a single order configuration, it must be unique',
+        ];
+        yield 'only non-unique configurations' => [
+            [
+                new OrderConfiguration('u.tenantId', static fn (User $user) => $user->getTenantId(), isUnique: false),
+                new OrderConfiguration('u.number', static fn (User $user) => $user->getNumber(), isUnique: false),
+            ],
+            'The order configurations are all declared non-unique: end them with a unique field, such as the id.',
+        ];
+    }
+
+    public function testFirstResultIsRejected(): void
+    {
+        $queryBuilder = $this
+            ->entityManager
+            ->getRepository(User::class)
+            ->createQueryBuilder('u')
+            ->setFirstResult(3)
+        ;
+
+        /** @var CursorPagination<User> $pagination */
+        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+            new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
+        ), 2);
+
+        $message = 'The query builder must not have a first result (setFirstResult()): it would skip rows on every page. Filter the query instead.';
+
+        try {
+            iterator_to_array($pagination->getResults());
+            self::fail('getResults() should throw a LogicException.');
+        } catch (LogicException $logicException) {
+            self::assertSame($message, $logicException->getMessage());
+        }
+
+        $this->expectExceptionObject(new LogicException($message));
+        $pagination->count();
+    }
+
+    public function testMaxResultsIsReplaced(): void
+    {
+        $queryBuilder = $this
+            ->entityManager
+            ->getRepository(User::class)
+            ->createQueryBuilder('u')
+            ->setMaxResults(3)
+        ;
+
+        /** @var CursorPagination<User> $pagination */
+        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+            new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
+        ), 2);
+
+        self::assertCount(10, iterator_to_array($pagination->getResults(), false));
+        self::assertSame(10, $pagination->count());
     }
 
     public function testNonUniqueOrderConfigurationIsAllowedWithOtherConfigurations(): void

@@ -34,9 +34,12 @@ composer require silarhi/cursor-pagination
         Every iteration starts from the beginning with its own cursor, even if a previous one was stopped early.
     </Card>
     <Card title="Fetch joins handled" icon="setting">
-        Doctrine's fetch-join-collection strategy is only used when the query has joins: one query per page otherwise.
+        One query per page, or two when the query joins a collection: the page's ids, then their rows.
+    </Card>
+    <Card title="Query analysis" icon="warning">
+        Collection joins and scalar rows are detected; misconfigured orders throw instead of skipping rows.
     </Card>
     <Card title="Counting" icon="document">
-        `count()` and `getNbPages()` rely on Doctrine's `Paginator`.
+        `count()` and `getNbPages()`, with a plain `COUNT` when no join can duplicate rows.
     </Card>
 </CardGrid>

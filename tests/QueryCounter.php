@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Silarhi\CursorPagination\Tests;
 
+use function is_string;
+
 use Override;
 use Psr\Log\AbstractLogger;
 use Stringable;
@@ -22,6 +24,15 @@ use Stringable;
 final class QueryCounter extends AbstractLogger
 {
     public int $count = 0;
+
+    /** @var list<string> */
+    public array $queries = [];
+
+    public function reset(): void
+    {
+        $this->count = 0;
+        $this->queries = [];
+    }
 
     /**
      * $message is left untyped to stay compatible with psr/log 1.x.
@@ -34,6 +45,8 @@ final class QueryCounter extends AbstractLogger
     {
         if (str_starts_with((string) $message, 'Executing ')) {
             ++$this->count;
+            $sql = $context['sql'] ?? null;
+            $this->queries[] = is_string($sql) ? $sql : '';
         }
     }
 }

@@ -394,6 +394,42 @@ final class CursorPaginationTest extends DoctrineTestCase
         self::assertSame(range(1, 10), $secondIds);
     }
 
+    #[DataProvider('provideFetchJoinCollection')]
+    public function testFetchJoinCollection(?bool $fetchJoinCollection, bool $withJoin, int $expectedQueries): void
+    {
+        $queryBuilder = $this
+            ->entityManager
+            ->getRepository(User::class)
+            ->createQueryBuilder('u');
+
+        if ($withJoin) {
+            $queryBuilder->leftJoin(User::class, 'u2', 'WITH', 'u2.id = u.id');
+        }
+
+        /** @var CursorPagination<User> $pagination */
+        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+            new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
+        ), 5, $fetchJoinCollection);
+
+        $this->queryCounter->count = 0;
+        $ids = array_map(static fn (User $user): ?int => $user->getId(), iterator_to_array($pagination->getResults(), false));
+
+        self::assertSame(range(1, 10), $ids);
+        // 3 pages (5, 5, then an empty one): 1 query per page, or 2 per non-empty page with the fetch join collection strategy
+        self::assertSame($expectedQueries, $this->queryCounter->count);
+    }
+
+    /**
+     * @return iterable<string, array{?bool, bool, int}>
+     */
+    public static function provideFetchJoinCollection(): iterable
+    {
+        yield 'auto without join' => [null, false, 3];
+        yield 'auto with join' => [null, true, 5];
+        yield 'enabled without join' => [true, false, 5];
+        yield 'disabled without join' => [false, false, 3];
+    }
+
     /**
      * @return CursorPagination<User>
      */

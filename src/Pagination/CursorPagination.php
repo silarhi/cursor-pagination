@@ -43,7 +43,11 @@ final class CursorPagination implements IteratorAggregate, Countable
         private readonly QueryBuilder $queryBuilder,
         private readonly OrderConfigurations $orderConfigurations,
         private readonly int $maxPerPages = 100,
-        private readonly bool $fetchJoinCollection = true,
+        /**
+         * Doctrine Paginator's fetchJoinCollection flag. null (auto) enables it only when the query has joins
+         * or several root entities, the only cases where root rows may be duplicated.
+         */
+        private readonly ?bool $fetchJoinCollection = null,
         private readonly ?bool $useOutputWalkers = null,
     ) {
     }
@@ -65,7 +69,7 @@ final class CursorPagination implements IteratorAggregate, Countable
     public function count(): int
     {
         if (null === $this->nbResults) {
-            $paginator = new Paginator($this->queryBuilder, $this->fetchJoinCollection);
+            $paginator = new Paginator($this->queryBuilder, $this->resolveFetchJoinCollection());
             $paginator->setUseOutputWalkers($this->useOutputWalkers);
 
             $this->nbResults = $paginator->count();
@@ -108,7 +112,7 @@ final class CursorPagination implements IteratorAggregate, Countable
                 $this->applyCursor($queryBuilder, $afterValues);
             }
 
-            $paginator = new Paginator($queryBuilder, $this->fetchJoinCollection);
+            $paginator = new Paginator($queryBuilder, $this->resolveFetchJoinCollection());
             $paginator->setUseOutputWalkers($this->useOutputWalkers);
 
             $results = iterator_to_array($paginator->getIterator());
@@ -166,7 +170,27 @@ final class CursorPagination implements IteratorAggregate, Countable
             ));
         }
 
+        $configurations = $this->orderConfigurations->getOrderConfigurations();
+        if (count($configurations) > 1) {
+            // Redundant bound on the leading column: (a > x OR (a = x AND b > y)) implies a >= x. Unlike the OR
+            // expansion, this plain range predicate lets the database seek an index on the leading column
+            // instead of scanning it from the start on every page (e.g. PostgreSQL)
+            $leadingIndex = array_key_first($configurations);
+            $leading = $configurations[$leadingIndex];
+            $queryBuilder->andWhere(new Comparison(
+                $leading->getFieldName(),
+                $leading->isOrderAscending() ? '>=' : '<=',
+                sprintf(':cursor_parameter_%d', $leadingIndex),
+            ));
+        }
+
         $queryBuilder->andWhere($whereClause);
+    }
+
+    private function resolveFetchJoinCollection(): bool
+    {
+        return $this->fetchJoinCollection
+            ?? ([] !== $this->queryBuilder->getDQLPart('join') || 1 !== count($this->queryBuilder->getRootAliases()));
     }
 
     /**

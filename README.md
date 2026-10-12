@@ -102,7 +102,11 @@ $pagination->getNbPages(); // number of pages of 100 results
 ```
 
 Any existing `ORDER BY` on the QueryBuilder is replaced by the order configurations. The constructor also accepts
-`$fetchJoinCollection` (default `true`) and `$useOutputWalkers` (default `null`), passed to Doctrine's `Paginator`.
+`$fetchJoinCollection` and `$useOutputWalkers` (both default `null`), passed to Doctrine's `Paginator`.
+
+`$fetchJoinCollection` makes Doctrine run two queries per page (the page's distinct ids, then their rows) so that
+joined collections do not duplicate root rows. With the default `null`, it is only enabled when the query has joins
+or several root entities; pass `true` or `false` to force it.
 
 ### Order configurations
 

@@ -1,9 +1,11 @@
 {
     "devDependencies": {
         "husky": ">=9.1.7",
-        "lint-staged": ">=17.6.0"
+        "lint-staged": ">=17.6.0",
+        "prettier": "^3.8.1"
     },
     "lint-staged": {
+        "*.{md,mdx,yml,yaml}": "prettier --write",
         "*.php": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php",
         "composer.json": "composer normalize"
     },

@@ -1,0 +1,42 @@
+---
+title: Cursor Pagination
+description: Cursor-based (keyset) pagination for Doctrine ORM query builders, for faster batch operations.
+template: splash
+hero:
+    tagline: Walk through large Doctrine ORM result sets in fixed-size pages. Each page starts after the last row of the previous one instead of skipping rows with an OFFSET, so page 10,000 costs the same as page 1.
+    actions:
+        - text: Get started
+          link: /getting-started/installation/
+          icon: right-arrow
+        - text: View on GitHub
+          link: https://github.com/silarhi/cursor-pagination
+          icon: github
+          variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components'
+
+```bash
+composer require silarhi/cursor-pagination
+```
+
+<CardGrid>
+    <Card title="Keyset pagination" icon="rocket">
+        Each page is fetched with a `WHERE` clause built from the last row of the previous page, never an `OFFSET`.
+    </Card>
+    <Card title="Multi-field ordering" icon="list-format">
+        Combine several fields, each ascending or descending, ending with a unique one.
+    </Card>
+    <Card title="Item or chunk iteration" icon="puzzle">
+        Iterate entity by entity, or by arrays of `maxPerPages` items for flush and clear batches.
+    </Card>
+    <Card title="Restartable iterations" icon="approve-check">
+        Every iteration starts from the beginning with its own cursor, even if a previous one was stopped early.
+    </Card>
+    <Card title="Fetch joins handled" icon="setting">
+        Doctrine's fetch-join-collection strategy is only used when the query has joins: one query per page otherwise.
+    </Card>
+    <Card title="Counting" icon="document">
+        `count()` and `getNbPages()` rely on Doctrine's `Paginator`.
+    </Card>
+</CardGrid>

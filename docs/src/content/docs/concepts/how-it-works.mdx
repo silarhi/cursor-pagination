@@ -1,0 +1,81 @@
+---
+title: How it works
+description: Keyset pagination against OFFSET pagination, and what CursorPagination does for each page.
+sidebar:
+    order: 1
+---
+
+import Flow from '@silarhi/docs-kit/components/Flow.astro'
+
+## OFFSET pagination
+
+The usual way to read a table by pages is `LIMIT` and `OFFSET`:
+
+```sql
+SELECT * FROM user WHERE enabled = 1 ORDER BY created_at, id LIMIT 100 OFFSET 500000
+```
+
+It has two problems on large tables:
+
+- **Each page is slower than the previous one.** The database still reads and discards every skipped row: page 5,001
+  reads 500,100 rows to return 100.
+- **Writes shift the pages.** A row inserted or deleted before the current offset moves every following row by one, so
+  some rows are skipped or processed twice. A batch that changes the rows it filters on (disabling the enabled users)
+  skips about half of them.
+
+## Keyset pagination
+
+Keyset (or cursor) pagination remembers the values of the last row of a page, the cursor, and starts the next page
+right after them:
+
+```sql
+SELECT * FROM user
+WHERE enabled = 1
+  AND created_at >= :createdAt
+  AND (created_at > :createdAt OR (created_at = :createdAt AND id > :id))
+ORDER BY created_at, id
+LIMIT 100
+```
+
+With an index on `(created_at, id)`, the database seeks to the cursor and reads 100 rows: every page costs the same.
+Rows that changed or disappeared behind the cursor do not move it.
+
+## One page, step by step
+
+<Flow
+    caption="CursorPagination repeats these steps until a page comes back short."
+    steps={[
+        { title: 'Query the page', detail: 'ORDER BY + LIMIT, WHERE after the cursor' },
+        { title: 'Read the cursor', detail: 'closures on the last row', accent: true },
+        { title: 'Yield the rows', detail: 'one by one or as a chunk' },
+        { title: 'Next page', detail: 'or stop', arrow: 'page full' },
+    ]}
+/>
+
+For each page, `CursorPagination`:
+
+1. Clones your `QueryBuilder`, replaces its `ORDER BY` with the [order configurations](/guides/ordering/) and its max
+   results with `$maxPerPages`.
+2. From the second page on, adds the cursor condition: see [composite cursors](/guides/composite-cursors/).
+3. Runs the query through Doctrine's `Paginator` and loads the whole page.
+4. Reads the cursor values from the last row of the page, with the closures of the order configurations, **before**
+   yielding any row: code that changes the ordered fields while iterating does not shift the next page.
+5. Yields the rows. A page with fewer rows than `$maxPerPages` is the last one; otherwise the next page is queried, and
+   comes back empty when the total is a multiple of `$maxPerPages`.
+
+Without joins, that is one query per page. With joins, Doctrine's fetch-join-collection strategy takes two: see
+[fetch joins and collections](/guides/fetch-joins/).
+
+The cursor is local to each iteration: every `foreach`, `getResults()` and `getChunkResults()` starts from the first
+page, even after a previous one was stopped with `break`, and two interleaved iterations do not share their cursor.
+
+## What the cursor does not do
+
+- **No random access.** A page can only be reached from the previous one: there is no "go to page 42".
+  `getNbPages()` is there for progress bars.
+- **No resuming from a stored cursor.** To resume an interrupted batch, add a condition yourself, such as
+  `u.id > :lastProcessedId`: see [batch processing patterns](/guides/batch-processing/#resume-an-interrupted-batch).
+- **Rows moved ahead of the cursor are read again.** If the loop changes an ordered field so that the row now sorts
+  after the cursor (ordering on `u.updatedAt` and setting it to now), the row comes back in a later page. Order on
+  fields the loop does not change.
+- **Rows inserted during the run** are read if they sort after the cursor, and not if they sort before it.

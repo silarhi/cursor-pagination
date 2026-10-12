@@ -34,12 +34,11 @@
     Walk through large tables in fixed-size batches, without the cost of growing <code>OFFSET</code>s.
 </p>
 
----
+<p align="center">
+    📖 <a href="https://cursor-pagination.silarhi.dev"><strong>Documentation</strong></a>
+</p>
 
-With `OFFSET` pagination, the database still reads and discards every skipped row, so each page gets slower as you go
-deeper, and rows inserted or deleted during the run shift the pages, so some are skipped or processed twice. Cursor
-(keyset) pagination starts each page after the last row seen (`u.createdAt > :createdAt OR (u.createdAt = :createdAt
-AND u.id > :id)`), so every page costs the same on an indexed ordering and concurrent writes do not move the cursor.
+---
 
 ## Features
 
@@ -47,14 +46,12 @@ AND u.id > :id)`), so every page costs the same on an indexed ordering and concu
 - **Multi-field ordering** — combine several fields, each ascending or descending, ending with a unique one.
 - **Item or chunk iteration** — iterate entity by entity, or by arrays of `maxPerPages` items for flush/clear batches.
 - **Restartable iterations** — every iteration starts from the beginning, even if a previous one was stopped early.
+- **Fetch joins handled** — one query per page without joins, Doctrine's fetch-join-collection strategy with them.
 - **Counting** — `count()` and `getNbPages()` rely on Doctrine's `Paginator`.
 
 ## Requirements
 
-| Dependency   | Version |
-| ------------ | ------- |
-| PHP          | 8.2+    |
-| doctrine/orm | ^3.0    |
+PHP 8.2+ and doctrine/orm ^3.0.
 
 ## Installation
 
@@ -62,107 +59,44 @@ AND u.id > :id)`), so every page costs the same on an indexed ordering and concu
 composer require silarhi/cursor-pagination
 ```
 
-## Usage
+## Quick start
 
 ```php
 use Silarhi\CursorPagination\Configuration\OrderConfiguration;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Pagination\CursorPagination;
 
-$queryBuilder = $entityManager
-    ->getRepository(User::class)
-    ->createQueryBuilder('u')
-    ->where('u.enabled = true');
-
-$configurations = new OrderConfigurations(
-    new OrderConfiguration('u.createdAt', static fn (User $user): \DateTimeImmutable => $user->getCreatedAt()),
-    new OrderConfiguration('u.id', static fn (User $user): int => $user->getId()),
-);
+$queryBuilder = $entityManager->getRepository(User::class)->createQueryBuilder('u');
 
 /** @var CursorPagination<User> $pagination */
-$pagination = new CursorPagination($queryBuilder, $configurations, 100);
+$pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+    new OrderConfiguration('u.createdAt', static fn (User $user): \DateTimeImmutable => $user->getCreatedAt()),
+    new OrderConfiguration('u.id', static fn (User $user): int => $user->getId()),
+), 100);
 
-// Method 1: get results as chunks (recommended)
 foreach ($pagination->getChunkResults() as $users) {
-    foreach ($users as $user) {
-        $user->setEnabled(false);
-    }
-
+    // up to 100 users per chunk
     $entityManager->flush();
     $entityManager->clear();
 }
-
-// Method 2: get results one by one ($pagination is also iterable directly)
-foreach ($pagination->getResults() as $user) {
-    // do something with $user
-}
-
-$pagination->count();      // total number of results
-$pagination->getNbPages(); // number of pages of 100 results
 ```
 
-Any existing `ORDER BY` on the QueryBuilder is replaced by the order configurations. The constructor also accepts
-`$fetchJoinCollection` and `$useOutputWalkers` (both default `null`), passed to Doctrine's `Paginator`.
+## Documentation
 
-`$fetchJoinCollection` makes Doctrine run two queries per page (the page's distinct ids, then their rows) so that
-joined collections do not duplicate root rows. With the default `null`, it is only enabled when the query has joins
-or several root entities; pass `true` or `false` to force it.
+Everything else is on **[cursor-pagination.silarhi.dev](https://cursor-pagination.silarhi.dev)**:
 
-### Order configurations
-
-`OrderConfiguration` takes the DQL field, a closure that reads that field's value from a result (used to build the next
-cursor), the direction (`orderAscending`, default `true`) and an optional `isUnique` flag:
-
-```php
-new OrderConfiguration('u.createdAt', static fn (User $user) => $user->getCreatedAt(), orderAscending: false);
-```
-
-The last configuration must point to a unique field (usually the primary key): with only non-unique fields, rows sharing
-the same values at a page boundary would be skipped. A single configuration declared with `isUnique: false` throws a
-`LogicException` when the second page is fetched.
-
-## Testing & Quality
-
-The test suite runs on an in-memory SQLite database and requires the `pdo_sqlite` extension.
-
-```bash
-# Install dependencies
-composer install
-
-# Run tests
-vendor/bin/phpunit
-
-# Static analysis (level: max)
-vendor/bin/phpstan analyse
-
-# Static analysis (Psalm)
-vendor/bin/psalm
-
-# Code style check
-vendor/bin/php-cs-fixer fix --dry-run --diff
-
-# Code style fix
-vendor/bin/php-cs-fixer fix
-
-# Code modernization check
-vendor/bin/rector process --dry-run
-```
+- [Installation](https://cursor-pagination.silarhi.dev/getting-started/installation/) and [quick start](https://cursor-pagination.silarhi.dev/getting-started/quick-start/)
+- [How it works](https://cursor-pagination.silarhi.dev/concepts/how-it-works/): keyset pagination against `OFFSET`
+- Guides: [ordering and unique keys](https://cursor-pagination.silarhi.dev/guides/ordering/), [composite cursors](https://cursor-pagination.silarhi.dev/guides/composite-cursors/),
+  [fetch joins and collections](https://cursor-pagination.silarhi.dev/guides/fetch-joins/), [scalar rows and memory](https://cursor-pagination.silarhi.dev/guides/scalar-rows/),
+  [batch processing patterns](https://cursor-pagination.silarhi.dev/guides/batch-processing/)
+- Reference: [CursorPagination](https://cursor-pagination.silarhi.dev/reference/cursor-pagination/),
+  [OrderConfiguration(s)](https://cursor-pagination.silarhi.dev/reference/order-configurations/), [ChunkIterator](https://cursor-pagination.silarhi.dev/reference/chunk-iterator/)
 
 ## Contributing
 
-Contributions are welcome! Please make sure your changes pass all quality checks before submitting a pull request:
-
-```bash
-vendor/bin/phpunit && vendor/bin/phpstan analyse && vendor/bin/psalm && vendor/bin/php-cs-fixer fix --dry-run --diff
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md). Release notes are in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
-
----
-
-<p align="center">
-    Built with care by <a href="https://github.com/silarhi">SILARHI</a>.<br>
-    If Cursor Pagination saves you time, consider giving it a star on GitHub.
-</p>
+Released under the [MIT License](LICENSE).

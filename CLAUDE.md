@@ -72,6 +72,18 @@ composer normalize --dry-run
 - QA tools are bumped to their latest releases. `config.bump-after-update: "dev"` also raises the other dev dependencies (`symfony/cache`, `doctrine/data-fixtures`) on a full `composer update`: check those floors before committing a `composer.json` touched by an update.
 - `composer.lock` is not committed.
 
+## API Documentation
+
+**Always update documentation when adding or modifying public API**: `CursorPagination` (constructor arguments,
+methods), `OrderConfiguration`, `OrderConfigurations`, `ChunkIterator`, the generated cursor condition, exceptions.
+
+1. **`docs/`** — the documentation site (cursor-pagination.silarhi.dev, Starlight with `@silarhi/docs-kit`): guides
+   and reference pages. Build it with `yarn install && yarn build` in `docs/`. Keep `README.md` short: update its
+   features list or quick start only when they change.
+2. **`CLAUDE.md`** — Architecture.
+3. **PHPDoc blocks** — accurate `@param`, `@return` and `@throws` on public methods.
+4. **`CHANGELOG.md`** — see below.
+
 ## Changelog & Releases
 
 - **`CHANGELOG.md`** follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Every user-facing change gets an entry in the top section, titled with the next release, never a bare `[Unreleased]`: the next minor (e.g. `[2.3.0] - Unreleased`), or the next major for a BC break. Prefix breaking changes with **BC break:** and say what users must change. Skip dependency bumps, CI and tooling changes.

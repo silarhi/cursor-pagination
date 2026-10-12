@@ -4,3 +4,5 @@
 /.*                     export-ignore
 /psalm.xml              export-ignore
 /rector.php             export-ignore
+/docs                   export-ignore
+/CONTRIBUTING.md        export-ignore

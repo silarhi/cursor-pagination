@@ -22,6 +22,7 @@ public function __construct(
     int $maxPerPages = 100,
     ?bool $fetchJoinCollection = null,
     ?bool $useOutputWalkers = null,
+    ?PaginatorAdapterInterface $adapter = null,
 )
 ```
 
@@ -32,6 +33,7 @@ public function __construct(
 | `$maxPerPages`         | `100`   | Results per page, and size of the chunks of `getChunkResults()`. Use a positive value.                                                                                          |
 | `$fetchJoinCollection` | `null`  | Whether a page is limited by root entities (two queries) instead of SQL rows. `null` enables it for collection and arbitrary joins. See [fetch joins](/guides/fetch-joins/).    |
 | `$useOutputWalkers`    | `null`  | Whether Doctrine's output walkers build the count and distinct-ids queries. `null` picks them per query. See [output walkers](/guides/fetch-joins/#output-walkers).             |
+| `$adapter`             | `null`  | Runs the page and count queries. `null` uses Doctrine's `CursorPaginator` (doctrine/orm 3.7+), its `Paginator` otherwise. See [adapters](/reference/adapters/).                 |
 
 ## Exceptions
 

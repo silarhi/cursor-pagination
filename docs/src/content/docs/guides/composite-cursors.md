@@ -44,8 +44,9 @@ The condition is added with `andWhere()`: the conditions of your `QueryBuilder` 
 configuration gives a plain `u.id > :cursor_parameter_0`.
 
 :::caution
-The cursor parameters are named `cursor_parameter_<n>`, after the keys of the `OrderConfigurations` collection. Do not
-use these names for your own parameters.
+The cursor parameters are named `cursor_parameter_<n>`, after the keys of the `OrderConfigurations` collection, and the
+hidden result variables of [order expressions](/guides/ordering/#orderconfiguration) `cursor_order_<n>`. Do not use
+these names in your own query.
 :::
 
 ## The leading bound

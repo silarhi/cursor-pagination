@@ -20,15 +20,21 @@ use Doctrine\ORM\Query\Expr\Comparison;
 use Doctrine\ORM\Query\Expr\Orx;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\CountWalker;
-use Doctrine\ORM\Tools\Pagination\Paginator;
+use Doctrine\ORM\Tools\Pagination\CursorPaginator;
 use Generator;
 use IteratorAggregate;
 use LogicException;
 use Override;
+use ReflectionMethod;
+use Silarhi\CursorPagination\Adapter\DoctrineCursorPaginatorAdapter;
+use Silarhi\CursorPagination\Adapter\DoctrinePaginatorAdapter;
+use Silarhi\CursorPagination\Adapter\PaginatorAdapterInterface;
+use Silarhi\CursorPagination\Configuration\OrderConfiguration;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Iterator\ChunkIterator;
 use Silarhi\CursorPagination\Pagination\Internal\QueryAnalysis;
 use Silarhi\CursorPagination\Pagination\Internal\QueryAnalysisWalker;
+use SortDirection;
 
 use function sprintf;
 
@@ -42,6 +48,8 @@ final class CursorPagination implements IteratorAggregate, Countable
     /** @var int<0, max>|null */
     private ?int $nbResults = null;
 
+    private readonly PaginatorAdapterInterface $adapter;
+
     public function __construct(
         private readonly QueryBuilder $queryBuilder,
         private readonly OrderConfigurations $orderConfigurations,
@@ -49,7 +57,7 @@ final class CursorPagination implements IteratorAggregate, Countable
         /**
          * Whether $maxPerPages counts root entities instead of SQL rows, with two queries per page: the page's
          * distinct ids, then their rows. null (auto) enables it when the query joins a collection or another entity
-         * with JOIN … WITH, unless it only selects scalar values. Never pass false on a query that joins a
+         * with JOIN … ON, unless it only selects scalar values. Never pass false on a query that joins a
          * collection: its pages would come back short, and the iteration would stop at the first one.
          */
         private readonly ?bool $fetchJoinCollection = null,
@@ -58,7 +66,15 @@ final class CursorPagination implements IteratorAggregate, Countable
          * for each query.
          */
         private readonly ?bool $useOutputWalkers = null,
+        /*
+         * Runs the page and count queries. null picks Doctrine's CursorPaginator when it exists (doctrine/orm 3.7+),
+         * its Paginator otherwise.
+         */
+        ?PaginatorAdapterInterface $adapter = null,
     ) {
+        $this->adapter = $adapter ?? (class_exists(CursorPaginator::class)
+            ? new DoctrineCursorPaginatorAdapter()
+            : new DoctrinePaginatorAdapter());
     }
 
     /**
@@ -105,12 +121,9 @@ final class CursorPagination implements IteratorAggregate, Countable
                 $useOutputWalkers = $this->useOutputWalkers ?? ($distinct ? null : false);
             }
 
-            // Doctrine's Paginator counts distinct root entities, unless the hint says otherwise
             $query = $queryBuilder->getQuery()->setHint(CountWalker::HINT_DISTINCT, $distinct);
-            $paginator = new Paginator($query);
-            $paginator->setUseOutputWalkers($useOutputWalkers);
 
-            $this->nbResults = $paginator->count();
+            $this->nbResults = max(0, $this->adapter->count($query, $useOutputWalkers));
         }
 
         return $this->nbResults;
@@ -138,13 +151,20 @@ final class CursorPagination implements IteratorAggregate, Countable
 
         $baseQueryBuilder = $this->cloneQueryBuilder();
         $baseQueryBuilder->resetDQLPart('orderBy');
-        $baseQueryBuilder->setMaxResults($this->maxPerPages);
+        // Each page is limited by the adapter
+        $baseQueryBuilder->setMaxResults(null);
 
-        foreach ($this->orderConfigurations as $configuration) {
-            $baseQueryBuilder->addOrderBy(
-                $configuration->getFieldName(),
-                $configuration->getOrderByExpression(),
-            );
+        foreach ($this->orderConfigurations as $index => $configuration) {
+            $orderBy = $configuration->getFieldName();
+            if (1 !== preg_match('/^[a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*$/i', $orderBy)) {
+                // Doctrine's CursorPaginator only orders by fields and result variables: select any other expression
+                // (IDENTITY(p.author), a function…) as a hidden result variable. The cursor condition keeps the
+                // expression, a WHERE clause cannot use result variables
+                $orderBy = sprintf('cursor_order_%d', $index);
+                $baseQueryBuilder->addSelect(sprintf('%s AS HIDDEN %s', $configuration->getFieldName(), $orderBy));
+            }
+
+            $baseQueryBuilder->addOrderBy($orderBy, $this->sortDirection($configuration));
         }
 
         $analysis = QueryAnalysisWalker::analyse($baseQueryBuilder);
@@ -160,15 +180,13 @@ final class CursorPagination implements IteratorAggregate, Countable
                 $this->applyCursor($queryBuilder, $afterValues);
             }
 
-            $paginator = new Paginator($queryBuilder, $fetchJoinCollection);
-            $paginator->setUseOutputWalkers($this->useOutputWalkers);
-
-            $results = iterator_to_array($paginator->getIterator());
+            $page = $this->adapter->fetchPage($queryBuilder->getQuery(), $this->maxPerPages, $fetchJoinCollection, $this->useOutputWalkers);
+            $results = $page->items;
             if ([] === $results) {
                 break;
             }
 
-            $isLastPage = count($results) < $this->maxPerPages;
+            $isLastPage = !$page->hasMore;
 
             // Update cursor value before actually yielding results in order to avoid data loss
             $lastResult = $results[array_key_last($results)];
@@ -182,6 +200,22 @@ final class CursorPagination implements IteratorAggregate, Countable
                 break;
             }
         }
+    }
+
+    /**
+     * doctrine/orm 3.7 deprecates 'ASC' and 'DESC' for the PHP 8.6 SortDirection enum (polyfilled by
+     * symfony/polyfill-php86), doctrine/orm 4 requires it, older versions only accept strings.
+     */
+    private function sortDirection(OrderConfiguration $configuration): SortDirection|string
+    {
+        static $acceptsEnum = null;
+        $acceptsEnum ??= str_contains((string) (new ReflectionMethod(QueryBuilder::class, 'addOrderBy'))->getParameters()[1]->getType(), 'SortDirection');
+
+        if (!$acceptsEnum) {
+            return $configuration->getOrderByExpression();
+        }
+
+        return $configuration->isOrderAscending() ? SortDirection::Ascending : SortDirection::Descending;
     }
 
     private function cloneQueryBuilder(): QueryBuilder

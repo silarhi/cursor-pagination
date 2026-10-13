@@ -112,7 +112,7 @@ final class QueryAnalysisWalker extends TreeWalkerAdapter
                     $relation = $queryComponents[$joinDeclaration->aliasIdentificationVariable]['relation'] ?? null;
                     $joinsCollection = $joinsCollection || true === $relation?->isToMany();
                 } else {
-                    // JOIN Entity e WITH …: nothing tells how many rows match
+                    // JOIN Entity e ON … (WITH before doctrine/orm 3.6): nothing tells how many rows match
                     $joinsArbitrarily = true;
                 }
             }

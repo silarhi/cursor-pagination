@@ -12,15 +12,16 @@ declare(strict_types=1);
 
 namespace Silarhi\CursorPagination\Tests\Fixtures;
 
-use Doctrine\Common\DataFixtures\FixtureInterface;
 use Doctrine\Persistence\ObjectManager;
-use Override;
 use Silarhi\CursorPagination\Tests\Entity\Post;
 use Silarhi\CursorPagination\Tests\Entity\User;
 
 use function sprintf;
 
-final class UserDataLoader implements FixtureInterface
+/**
+ * Loads the users and posts the tests expect.
+ */
+final class UserDataLoader
 {
     /** Tenant ids of users 1 to 10 */
     public const TENANT_IDS = [2, 2, 2, 12, 12, 12, 2, 2, 2, 12];
@@ -28,7 +29,6 @@ final class UserDataLoader implements FixtureInterface
     /** Authors of posts 1 to 10, by user id */
     public const POST_AUTHORS = [1, 1, 1, 3, 3, 4, 7, null, null, 10];
 
-    #[Override]
     public function load(ObjectManager $manager): void
     {
         $users = [];

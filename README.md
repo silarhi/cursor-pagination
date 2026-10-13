@@ -49,6 +49,7 @@
 - **Fetch joins handled** — one query per page, or two when the query joins a collection: the page's ids, then their rows.
 - **Query analysis** — collection joins and scalar rows are detected; misconfigured orders throw instead of skipping rows.
 - **Counting** — `count()` and `getNbPages()`, with a plain `COUNT` when no join can duplicate rows.
+- **Ready for doctrine/orm 4** — runs on Doctrine's `CursorPaginator` (doctrine/orm 3.7+), or its `Paginator` before 3.7.
 
 ## Requirements
 

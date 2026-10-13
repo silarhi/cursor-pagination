@@ -69,6 +69,7 @@ composer normalize --dry-run
 ## Dependency Constraints
 
 - `doctrine/orm` stays `^3.0`: the lowest-dependencies CI job tests its minimal version, and Renovate only widens it for new majors (`rangeStrategy: widen`). Never raise its floor.
+- doctrine/orm 3.7 deprecates `Doctrine\ORM\Tools\Pagination\Paginator` (removed in 4.0, replaced by `OffsetPaginator`), which `CursorPagination` builds every page and count on. Never merge a Renovate PR widening `doctrine/orm` to `^4` blindly: the library must first stop depending on `Paginator` (work in progress on the `feat/doctrine-orm-4-adapters` branch).
 - QA tools are bumped to their latest releases. `config.bump-after-update: "dev"` also raises the other dev dependencies (`symfony/cache`, `doctrine/data-fixtures`) on a full `composer update`: check those floors before committing a `composer.json` touched by an update.
 - `composer.lock` is not committed.
 

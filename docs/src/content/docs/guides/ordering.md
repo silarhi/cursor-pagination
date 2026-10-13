@@ -51,15 +51,18 @@ A single field that is unique on its own (`u.id`, a unique `u.email`) needs noth
 
 `isUnique` declares whether a field is unique on its own. `CursorPagination` cannot tell whether the fields are unique
 together, so it only rejects an order that has no unique field for sure: when every configuration is declared
-`isUnique: false`, `getResults()` throws a `LogicException` before the first page.
+`isUnique: false`, `getResults()` throws a `LogicException` before the first page. Building the
+`OrderConfigurations` does not throw: the check runs when the pagination is iterated.
 
 ```php
-// Throws a LogicException ("When using a single order configuration, it must be unique")
+// Rejected: iterating the pagination throws a LogicException
+// ("When using a single order configuration, it must be unique")
 new OrderConfigurations(
     new OrderConfiguration('u.tenantId', static fn (User $user) => $user->getTenantId(), isUnique: false),
 );
 
-// Throws a LogicException ("The order configurations are all declared non-unique: …")
+// Rejected: iterating the pagination throws a LogicException
+// ("The order configurations are all declared non-unique: …")
 new OrderConfigurations(
     new OrderConfiguration('u.tenantId', static fn (User $user) => $user->getTenantId(), isUnique: false),
     new OrderConfiguration('u.createdAt', static fn (User $user) => $user->getCreatedAt(), isUnique: false),

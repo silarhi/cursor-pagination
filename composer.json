@@ -8,7 +8,8 @@
         "orm",
         "pagination",
         "cursor",
-        "cursor-pagination"
+        "cursor-pagination",
+        "keyset"
     ],
     "authors": [
         {

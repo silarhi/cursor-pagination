@@ -16,8 +16,9 @@ set up.
 
 ## Quality checks
 
-The CI runs them all, on every supported PHP version, with the lowest and the latest dependencies. Make sure your
-changes pass them before opening a pull request:
+The CI runs PHPUnit on every supported PHP version (8.2 to 8.5), with the lowest and the latest dependencies, and
+PHPStan, Psalm, PHP CS Fixer and the `composer.json` checks once, on PHP 8.2 with the latest dependencies. Rector does
+not run in the CI: run it locally. Make sure your changes pass them all before opening a pull request:
 
 ```bash
 # Run tests
@@ -46,7 +47,7 @@ composer normalize --dry-run
 All at once:
 
 ```bash
-vendor/bin/phpunit && vendor/bin/phpstan analyse && vendor/bin/psalm && vendor/bin/php-cs-fixer fix --dry-run --diff
+vendor/bin/phpunit && vendor/bin/phpstan analyse && vendor/bin/psalm && vendor/bin/php-cs-fixer fix --dry-run --diff && vendor/bin/rector process --dry-run
 ```
 
 ## Documentation

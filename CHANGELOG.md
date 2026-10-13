@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An empty `OrderConfigurations` throws a `LogicException`, instead of fetching the first page again and again.
 - A `QueryBuilder` with a first result (`setFirstResult()`) makes `getResults()` and `count()` throw a `LogicException`: the offset was applied to every page, skipping rows on each of them.
 
+### Fixed
+
+- `ChunkIterator` declared `@implements IteratorAggregate<TKey, TValue>` while it yields chunks: static analysers now see `IteratorAggregate<int, array<TKey, TValue>>` when iterating it directly.
+
 ## [2.2.0] - 2026-10-12
 
 ### Changed

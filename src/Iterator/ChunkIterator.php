@@ -22,7 +22,7 @@ use Traversable;
  * @template TValue
  * @template TKey of int|string
  *
- * @implements IteratorAggregate<TKey, TValue>
+ * @implements IteratorAggregate<int, array<TKey, TValue>>
  */
 final readonly class ChunkIterator implements IteratorAggregate
 {

@@ -25,17 +25,26 @@ public function __construct(
 )
 ```
 
-| Argument               | Default | Description                                                                                                                                     |
-| ---------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `$queryBuilder`        |         | The query to paginate. It is cloned for each page: its `ORDER BY` is replaced by the order configurations, its max results by `$maxPerPages`.   |
-| `$orderConfigurations` |         | The order of the pages, ending with a unique field. See [OrderConfigurations](/reference/order-configurations/).                                |
-| `$maxPerPages`         | `100`   | Rows per page, and size of the chunks of `getChunkResults()`. Use a positive value.                                                             |
-| `$fetchJoinCollection` | `null`  | Doctrine `Paginator`'s flag. `null` enables it only when the query has joins or several root entities. See [fetch joins](/guides/fetch-joins/). |
-| `$useOutputWalkers`    | `null`  | Passed to `Paginator::setUseOutputWalkers()`. See [output walkers](/guides/fetch-joins/#output-walkers).                                        |
+| Argument               | Default | Description                                                                                                                                                                     |
+| ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `$queryBuilder`        |         | The query to paginate. It is cloned for each page: its `ORDER BY` is replaced by the order configurations, its max results by `$maxPerPages`. Its first result must stay unset. |
+| `$orderConfigurations` |         | The order of the pages, ending with a unique field. See [OrderConfigurations](/reference/order-configurations/).                                                                |
+| `$maxPerPages`         | `100`   | Results per page, and size of the chunks of `getChunkResults()`. Use a positive value.                                                                                          |
+| `$fetchJoinCollection` | `null`  | Whether a page is limited by root entities (two queries) instead of SQL rows. `null` enables it for collection and arbitrary joins. See [fetch joins](/guides/fetch-joins/).    |
+| `$useOutputWalkers`    | `null`  | Whether Doctrine's output walkers build the count and distinct-ids queries. `null` picks them per query. See [output walkers](/guides/fetch-joins/#output-walkers).             |
 
-:::caution
-Leave the first result of the `QueryBuilder` unset: it is kept on every page, and would skip rows on each of them.
-:::
+## Exceptions
+
+These misconfigurations would skip rows: they throw a `LogicException` before any row is read.
+
+| Message                                                                | Cause                                                                                                   |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `At least one order configuration is required.`                        | Empty `OrderConfigurations`.                                                                            |
+| `When using a single order configuration, it must be unique`           | A single configuration declared `isUnique: false`. See [ordering](/guides/ordering/#the-isunique-flag). |
+| `The order configurations are all declared non-unique: …`              | Several configurations, all declared `isUnique: false`.                                                 |
+| `The query builder must not have a first result (setFirstResult()): …` | `setFirstResult()` was called on the `QueryBuilder`. Also thrown by `count()`.                          |
+
+Doctrine's own exceptions (an invalid DQL query, a query with several root entities) are not wrapped.
 
 ## Methods
 
@@ -48,8 +57,8 @@ public function getResults(): Generator // Generator<int, T>
 Yields the results one by one, page after page. Each call starts from the first page, with its own cursor. The keys
 run from `0` across all pages.
 
-Throws a `LogicException` when the second page is fetched if the order is a single configuration declared with
-`isUnique: false`.
+Throws the `LogicException`s listed in [exceptions](#exceptions), on the first iteration. Since it is a generator,
+calling it does nothing until the first row is requested.
 
 ### getIterator()
 
@@ -74,8 +83,9 @@ Yields arrays of up to `$maxPerPages` results, built with [ChunkIterator](/refer
 public function count(): int
 ```
 
-The total number of results, from Doctrine's `Paginator`. It runs once, then is cached by the instance. Also available
-as `count($pagination)`.
+The total number of results: root entities, or rows for a query that only selects scalar fields (groups for a grouped
+one). It runs once, then is cached by the instance. Also available as `count($pagination)`. See
+[counting](/guides/fetch-joins/#counting) for the query it runs.
 
 ### getNbPages()
 

@@ -19,6 +19,7 @@ use Doctrine\ORM\Query\Expr\Andx;
 use Doctrine\ORM\Query\Expr\Comparison;
 use Doctrine\ORM\Query\Expr\Orx;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\Pagination\CountWalker;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Generator;
 use IteratorAggregate;
@@ -26,6 +27,8 @@ use LogicException;
 use Override;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Iterator\ChunkIterator;
+use Silarhi\CursorPagination\Pagination\Internal\QueryAnalysis;
+use Silarhi\CursorPagination\Pagination\Internal\QueryAnalysisWalker;
 
 use function sprintf;
 
@@ -44,14 +47,23 @@ final class CursorPagination implements IteratorAggregate, Countable
         private readonly OrderConfigurations $orderConfigurations,
         private readonly int $maxPerPages = 100,
         /**
-         * Doctrine Paginator's fetchJoinCollection flag. null (auto) enables it only when the query has joins
-         * or several root entities, the only cases where root rows may be duplicated.
+         * Whether $maxPerPages counts root entities instead of SQL rows, with two queries per page: the page's
+         * distinct ids, then their rows. null (auto) enables it when the query joins a collection or another entity
+         * with JOIN … WITH, unless it only selects scalar values. Never pass false on a query that joins a
+         * collection: its pages would come back short, and the iteration would stop at the first one.
          */
         private readonly ?bool $fetchJoinCollection = null,
+        /**
+         * Whether Doctrine's output walkers build the derived queries (count, distinct ids). null picks them
+         * for each query.
+         */
         private readonly ?bool $useOutputWalkers = null,
     ) {
     }
 
+    /**
+     * @throws LogicException when the query builder has a first result
+     */
     public function getNbPages(): int
     {
         return 0 >= $this->maxPerPages
@@ -59,18 +71,44 @@ final class CursorPagination implements IteratorAggregate, Countable
             : (int) ceil($this->count() / $this->maxPerPages);
     }
 
+    /**
+     * @return Generator<int, T>
+     *
+     * @throws LogicException see getResults()
+     */
     #[Override]
     public function getIterator(): Generator
     {
         return $this->getResults();
     }
 
+    /**
+     * The number of results: distinct root entities, or rows for a query that only selects scalar values.
+     *
+     * @throws LogicException when the query builder has a first result
+     */
     #[Override]
     public function count(): int
     {
         if (null === $this->nbResults) {
-            $paginator = new Paginator($this->queryBuilder, $this->resolveFetchJoinCollection());
-            $paginator->setUseOutputWalkers($this->useOutputWalkers);
+            $queryBuilder = $this->cloneQueryBuilder();
+            $analysis = QueryAnalysisWalker::analyse($queryBuilder);
+
+            if ($analysis->scalarOnly) {
+                // Every row is a result. Output walkers need the root identifier in the results, except to count
+                // the groups of a grouped query
+                $distinct = false;
+                $useOutputWalkers = $this->useOutputWalkers ?? $analysis->grouped;
+            } else {
+                // Without joined rows to collapse, a plain COUNT(*) gives the same number
+                $distinct = $analysis->multipliesRows() || $analysis->grouped;
+                $useOutputWalkers = $this->useOutputWalkers ?? ($distinct ? null : false);
+            }
+
+            // Doctrine's Paginator counts distinct root entities, unless the hint says otherwise
+            $query = $queryBuilder->getQuery()->setHint(CountWalker::HINT_DISTINCT, $distinct);
+            $paginator = new Paginator($query);
+            $paginator->setUseOutputWalkers($useOutputWalkers);
 
             $this->nbResults = $paginator->count();
         }
@@ -80,6 +118,8 @@ final class CursorPagination implements IteratorAggregate, Countable
 
     /**
      * @return iterable<int, array<T>>
+     *
+     * @throws LogicException see getResults()
      */
     public function getChunkResults(): iterable
     {
@@ -88,10 +128,15 @@ final class CursorPagination implements IteratorAggregate, Countable
 
     /**
      * @return Generator<int, T>
+     *
+     * @throws LogicException before the first page when the order configurations are empty or all declared
+     *                        isUnique: false, or when the query builder has a first result
      */
     public function getResults(): Generator
     {
-        $baseQueryBuilder = clone $this->queryBuilder;
+        $this->validateOrderConfigurations();
+
+        $baseQueryBuilder = $this->cloneQueryBuilder();
         $baseQueryBuilder->resetDQLPart('orderBy');
         $baseQueryBuilder->setMaxResults($this->maxPerPages);
 
@@ -101,6 +146,9 @@ final class CursorPagination implements IteratorAggregate, Countable
                 $configuration->getOrderByExpression(),
             );
         }
+
+        $analysis = QueryAnalysisWalker::analyse($baseQueryBuilder);
+        $fetchJoinCollection = $this->resolveFetchJoinCollection($analysis);
 
         // The cursor is local to this generator so that every iteration starts from the beginning,
         // even if a previous one was stopped early, and concurrent iterations do not share it
@@ -112,7 +160,7 @@ final class CursorPagination implements IteratorAggregate, Countable
                 $this->applyCursor($queryBuilder, $afterValues);
             }
 
-            $paginator = new Paginator($queryBuilder, $this->resolveFetchJoinCollection());
+            $paginator = new Paginator($queryBuilder, $fetchJoinCollection);
             $paginator->setUseOutputWalkers($this->useOutputWalkers);
 
             $results = iterator_to_array($paginator->getIterator());
@@ -120,20 +168,49 @@ final class CursorPagination implements IteratorAggregate, Countable
                 break;
             }
 
+            $isLastPage = count($results) < $this->maxPerPages;
+
             // Update cursor value before actually yielding results in order to avoid data loss
             $lastResult = $results[array_key_last($results)];
             $afterValues = $this->getCursorValues($lastResult);
 
-            $yieldResults = 0;
             foreach ($results as $result) {
-                ++$yieldResults;
                 yield $result;
             }
 
-            if ($yieldResults < $this->maxPerPages) {
+            if ($isLastPage) {
                 break;
             }
         }
+    }
+
+    private function cloneQueryBuilder(): QueryBuilder
+    {
+        if (0 !== $this->queryBuilder->getFirstResult()) {
+            throw new LogicException('The query builder must not have a first result (setFirstResult()): it would skip rows on every page. Filter the query instead.');
+        }
+
+        return clone $this->queryBuilder;
+    }
+
+    private function validateOrderConfigurations(): void
+    {
+        if (0 === count($this->orderConfigurations)) {
+            throw new LogicException('At least one order configuration is required.');
+        }
+
+        foreach ($this->orderConfigurations as $configuration) {
+            if (false !== $configuration->isUnique()) {
+                return;
+            }
+        }
+
+        throw new LogicException(1 === count($this->orderConfigurations) ? 'When using a single order configuration, it must be unique' : 'The order configurations are all declared non-unique: end them with a unique field, such as the id.');
+    }
+
+    private function resolveFetchJoinCollection(QueryAnalysis $analysis): bool
+    {
+        return $this->fetchJoinCollection ?? $analysis->hydratesDuplicateRows();
     }
 
     /**
@@ -146,10 +223,6 @@ final class CursorPagination implements IteratorAggregate, Countable
         foreach ($this->orderConfigurations as $index => $configuration) {
             $useLargerThan = $configuration->isOrderAscending();
             $sign = $useLargerThan ? '>' : '<';
-
-            if (false === $configuration->isUnique() && 1 === count($this->orderConfigurations)) {
-                throw new LogicException('When using a single order configuration, it must be unique');
-            }
 
             $cursorParameterName = sprintf(':cursor_parameter_%d', $index);
             $currentCondition = clone $previousConditions;
@@ -187,14 +260,8 @@ final class CursorPagination implements IteratorAggregate, Countable
         $queryBuilder->andWhere($whereClause);
     }
 
-    private function resolveFetchJoinCollection(): bool
-    {
-        return $this->fetchJoinCollection
-            ?? ([] !== $this->queryBuilder->getDQLPart('join') || 1 !== count($this->queryBuilder->getRootAliases()));
-    }
-
     /**
-     * @return array<int|string, mixed>
+     * @return array<int, mixed>
      */
     private function getCursorValues(mixed $item): array
     {

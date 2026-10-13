@@ -78,8 +78,8 @@ $pagination->count();      // total number of results
 $pagination->getNbPages(); // number of pages of 100 results
 ```
 
-`CursorPagination` is `Countable`, so `count($pagination)` works too. The count runs once, through Doctrine's
-`Paginator`, and is cached by the instance.
+`CursorPagination` is `Countable`, so `count($pagination)` works too. The count runs once, then is cached by the
+instance.
 
 ## Next steps
 

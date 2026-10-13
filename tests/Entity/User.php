@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Silarhi\CursorPagination\Tests\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -37,6 +39,15 @@ final class User
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $lastName;
+
+    /** @var Collection<int, Post> */
+    #[ORM\OneToMany(targetEntity: Post::class, mappedBy: 'author')]
+    private Collection $posts;
+
+    public function __construct()
+    {
+        $this->posts = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -91,5 +102,13 @@ final class User
     public function setTenantId(?int $tenantId): void
     {
         $this->tenantId = $tenantId;
+    }
+
+    /**
+     * @return Collection<int, Post>
+     */
+    public function getPosts(): Collection
+    {
+        return $this->posts;
     }
 }

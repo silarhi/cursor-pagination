@@ -17,12 +17,11 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Silarhi\CursorPagination\Configuration\OrderConfiguration;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Pagination\CursorPagination;
-use Silarhi\CursorPagination\Tests\DoctrineTestCase;
 use Silarhi\CursorPagination\Tests\Entity\Post;
 use Silarhi\CursorPagination\Tests\Entity\User;
 use Silarhi\CursorPagination\Tests\Fixtures\UserDataLoader;
 
-final class CursorPaginationJoinsTest extends DoctrineTestCase
+abstract class CursorPaginationJoinsTestCase extends PaginationTestCase
 {
     #[DataProvider('provideUseOutputWalkers')]
     public function testFetchJoinedCollectionIsPaginatedByRootEntity(?bool $useOutputWalkers): void
@@ -30,7 +29,7 @@ final class CursorPaginationJoinsTest extends DoctrineTestCase
         $queryBuilder = $this->createUserQueryBuilder()->addSelect('p')->leftJoin('u.posts', 'p');
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, $this->orderByUserId(), 2, useOutputWalkers: $useOutputWalkers);
+        $pagination = $this->createPagination($queryBuilder, $this->orderByUserId(), 2, useOutputWalkers: $useOutputWalkers);
 
         $this->queryCounter->reset();
         $postCounts = [];
@@ -39,8 +38,8 @@ final class CursorPaginationJoinsTest extends DoctrineTestCase
         }
 
         self::assertSame($this->expectedPostCounts(), $postCounts);
-        // 5 full pages of 2 queries (the page's ids, then their rows), then an empty page
-        self::assertSame(11, $this->queryCounter->count);
+        // 5 full pages of 2 queries (the page's ids, then their rows), then maybe an empty page
+        self::assertSame(10 + $this->trailingEmptyPageQueries(), $this->queryCounter->count);
         self::assertSame(10, $pagination->count());
     }
 
@@ -60,7 +59,7 @@ final class CursorPaginationJoinsTest extends DoctrineTestCase
         $queryBuilder = $this->createUserQueryBuilder()->distinct()->join('u.posts', 'p');
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, $this->orderByUserId(), 2, $fetchJoinCollection);
+        $pagination = $this->createPagination($queryBuilder, $this->orderByUserId(), 2, $fetchJoinCollection);
 
         $this->queryCounter->reset();
         $ids = array_map(static fn (User $user): ?int => $user->getId(), iterator_to_array($pagination->getResults(), false));
@@ -91,7 +90,7 @@ final class CursorPaginationJoinsTest extends DoctrineTestCase
             ->leftJoin('p.author', 'a');
 
         /** @var CursorPagination<Post> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
             new OrderConfiguration('p.id', static fn (Post $post) => $post->getId()),
         ), 5);
 
@@ -102,8 +101,41 @@ final class CursorPaginationJoinsTest extends DoctrineTestCase
         }
 
         self::assertSame(UserDataLoader::POST_AUTHORS, $authors);
-        // 2 full pages, then an empty one: the authors are fetch joined, not loaded one by one
-        self::assertSame(3, $this->queryCounter->count);
+        // 2 full pages, then maybe an empty one: the authors are fetch joined, not loaded one by one
+        self::assertSame(2 + $this->trailingEmptyPageQueries(), $this->queryCounter->count);
+    }
+
+    #[DataProvider('provideFetchJoinCollectionModes')]
+    public function testOrderByAnExpression(?bool $fetchJoinCollection): void
+    {
+        $queryBuilder = $this
+            ->entityManager
+            ->getRepository(Post::class)
+            ->createQueryBuilder('p')
+            ->addSelect('a')
+            ->join('p.author', 'a');
+
+        // Doctrine's CursorPaginator only orders by fields and result variables: IDENTITY() goes through a hidden one
+        /** @var CursorPagination<Post> $pagination */
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
+            new OrderConfiguration('IDENTITY(p.author)', static fn (Post $post) => $post->getAuthor()?->getId(), false),
+            new OrderConfiguration('p.id', static fn (Post $post) => $post->getId()),
+        ), 2, $fetchJoinCollection);
+
+        $ids = array_map(static fn (Post $post): ?int => $post->getId(), iterator_to_array($pagination->getResults(), false));
+
+        self::assertSame([10, 7, 6, 4, 5, 1, 2, 3], $ids);
+        self::assertSame(8, $pagination->count());
+    }
+
+    /**
+     * @return iterable<string, array{?bool}>
+     */
+    public static function provideFetchJoinCollectionModes(): iterable
+    {
+        yield 'auto' => [null];
+        yield 'disabled' => [false];
+        yield 'enabled' => [true];
     }
 
     #[DataProvider('provideScalarFetchJoinCollection')]
@@ -112,7 +144,7 @@ final class CursorPaginationJoinsTest extends DoctrineTestCase
         $queryBuilder = $this->createUserQueryBuilder()->select('u.id, u.tenantId');
 
         /** @var CursorPagination<array{id: int, tenantId: int}> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
             new OrderConfiguration('u.tenantId', static fn (array $row): mixed => $row['tenantId']),
             new OrderConfiguration('u.id', static fn (array $row): mixed => $row['id']),
         ), 3, $fetchJoinCollection);
@@ -139,7 +171,7 @@ final class CursorPaginationJoinsTest extends DoctrineTestCase
             ->join('u.posts', 'p');
 
         /** @var CursorPagination<array{userId: int, postId: int}> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
             new OrderConfiguration('u.id', static fn (array $row): mixed => $row['userId']),
             new OrderConfiguration('p.id', static fn (array $row): mixed => $row['postId']),
         ), 3);
@@ -160,7 +192,7 @@ final class CursorPaginationJoinsTest extends DoctrineTestCase
             ->groupBy('u.tenantId');
 
         /** @var CursorPagination<array{tenantId: int, users: int}> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
             new OrderConfiguration('u.tenantId', static fn (array $row): mixed => $row['tenantId']),
         ), 1);
 
@@ -183,7 +215,7 @@ final class CursorPaginationJoinsTest extends DoctrineTestCase
         $prepare($queryBuilder);
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, $this->orderByUserId());
+        $pagination = $this->createPagination($queryBuilder, $this->orderByUserId());
 
         $this->queryCounter->reset();
 

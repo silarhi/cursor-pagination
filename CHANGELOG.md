@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.3.0] - 2026-10-13
 
+### Added
+
+- Ready for doctrine/orm 4 (tested against its `4.0.x` branch; the `doctrine/orm` constraint is widened when 4.0 is released), through adapters in `Silarhi\CursorPagination\Adapter`: `CursorPagination` runs its page and count queries with a `PaginatorAdapterInterface`. `DoctrineCursorPaginatorAdapter` uses Doctrine's `CursorPaginator` (doctrine/orm 3.7+) and is the default whenever it exists; `DoctrinePaginatorAdapter` uses Doctrine's `Paginator`, deprecated in doctrine/orm 3.7 and removed in 4.0, and is the default before 3.7. Pass an adapter as the new last argument of `CursorPagination`, `$adapter`, to choose one. Both return the same results: `CursorPaginator` is called without a Doctrine cursor, the cursor condition stays the one of `CursorPagination`.
+
 ### Changed
 
-- The automatic `fetchJoinCollection` detection parses the query: it is only enabled for collection (to-many) joins and arbitrary joins (`JOIN Entity e WITH …`). A query with to-one joins only, a `SELECT DISTINCT` of the root entity, or a query that only selects scalar fields, takes one query per page instead of two.
+- The automatic `fetchJoinCollection` detection parses the query: it is only enabled for collection (to-many) joins and arbitrary joins (`JOIN Entity e ON …`). A query with to-one joins only, a `SELECT DISTINCT` of the root entity, or a query that only selects scalar fields, takes one query per page instead of two.
 - `count()` runs a plain `COUNT(*)` when no join can duplicate the rows, instead of `COUNT(DISTINCT id)` wrapped in subqueries by the output walkers. On a query that only selects scalar fields, it counts the rows (joined rows included), or the groups of a grouped query, without `useOutputWalkers: false`.
 - Order configurations all declared `isUnique: false` throw a `LogicException`, with several configurations too. The check, and the one for a single configuration, run before the first page instead of the second.
+- On doctrine/orm 3.7 and later, a full last page is no longer followed by a query for an empty page: `CursorPaginator` fetches one more row to tell whether a next page exists.
+- On doctrine/orm 3.7 and later, the order directions are passed to `QueryBuilder::addOrderBy()` as `SortDirection` enum cases instead of the `'ASC'` and `'DESC'` strings it deprecates.
+- An order configuration on an expression other than `alias.field` (`IDENTITY(p.author)`, a function) is also selected as a hidden result variable, `cursor_order_<n>`, which the `ORDER BY` uses: `CursorPaginator` only orders by fields and result variables. Do not use these names in your queries.
 - An empty `OrderConfigurations` throws a `LogicException`, instead of fetching the first page again and again.
 - A `QueryBuilder` with a first result (`setFirstResult()`) makes `getResults()` and `count()` throw a `LogicException`: the offset was applied to every page, skipping rows on each of them.
 - A `QueryBuilder` that does not build a `SELECT` query (`update()`, `delete()`) makes `count()` throw a `LogicException` (`CursorPagination only supports SELECT queries.`).

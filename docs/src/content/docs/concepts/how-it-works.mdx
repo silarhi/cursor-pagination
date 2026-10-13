@@ -58,11 +58,13 @@ For each page, `CursorPagination`:
    results with `$maxPerPages`. Before the first page, it parses the query once to detect collection joins and
    scalar selects, and rejects the configurations that would skip rows.
 2. From the second page on, adds the cursor condition: see [composite cursors](/guides/composite-cursors/).
-3. Runs the query through Doctrine's `Paginator` and loads the whole page.
+3. Runs the query through an [adapter](/reference/adapters/), Doctrine's `CursorPaginator` or its `Paginator`, and
+   loads the whole page.
 4. Reads the cursor values from the last row of the page, with the closures of the order configurations, **before**
    yielding any row: code that changes the ordered fields while iterating does not shift the next page.
-5. Yields the rows. A page with fewer rows than `$maxPerPages` is the last one; otherwise the next page is queried, and
-   comes back empty when the total is a multiple of `$maxPerPages`.
+5. Yields the rows, then queries the next page unless this one was the last: `CursorPaginator` fetches one more row to
+   tell, with `Paginator` a page with fewer rows than `$maxPerPages` is the last one, and a full last page is followed
+   by an empty one.
 
 Without collection joins or arbitrary joins (`JOIN Entity e WITH …`), that is one query per page. With them, the
 fetch-join-collection strategy takes two: see [fetch joins and collections](/guides/fetch-joins/).

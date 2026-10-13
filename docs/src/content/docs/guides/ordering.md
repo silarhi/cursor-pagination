@@ -20,7 +20,9 @@ new OrderConfiguration(
 ```
 
 - **The DQL field** goes in the `ORDER BY` and in the cursor condition, as is: use the alias of the query
-  (`u.createdAt`, not `createdAt`).
+  (`u.createdAt`, not `createdAt`). Any other expression (`IDENTITY(p.author)`, a function) is also selected as a
+  hidden result variable, `cursor_order_<n>`, which the `ORDER BY` uses: Doctrine's `CursorPaginator` only orders by
+  fields and result variables.
 - **The closure** receives one result, as the query returns it (an entity, or an array for
   [scalar rows](/guides/scalar-rows/)), and returns the value of the field. It is called on the last row of each page to
   build the cursor, so it must return the value that was read from the database, in a type Doctrine can bind as a

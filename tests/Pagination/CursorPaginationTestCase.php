@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Silarhi\CursorPagination\Tests\Pagination;
 
+use Composer\InstalledVersions;
+
 use function count;
 
 use LogicException;
@@ -19,10 +21,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Silarhi\CursorPagination\Configuration\OrderConfiguration;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Pagination\CursorPagination;
-use Silarhi\CursorPagination\Tests\DoctrineTestCase;
 use Silarhi\CursorPagination\Tests\Entity\User;
 
-final class CursorPaginationTest extends DoctrineTestCase
+abstract class CursorPaginationTestCase extends PaginationTestCase
 {
     public function testSimplePagination(): void
     {
@@ -72,7 +73,7 @@ final class CursorPaginationTest extends DoctrineTestCase
         $configurations = new OrderConfigurations(...$orderConfigurations);
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, $configurations, 2);
+        $pagination = $this->createPagination($queryBuilder, $configurations, 2);
 
         $expectedResults = range(1, 10);
         if ($reverseOrder) {
@@ -115,7 +116,7 @@ final class CursorPaginationTest extends DoctrineTestCase
         ;
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, $configurations, 2);
+        $pagination = $this->createPagination($queryBuilder, $configurations, 2);
 
         $expectedResults = [1, 2, 3, 7, 8, 9, 4, 5, 6, 10];
         $index = 0;
@@ -232,7 +233,7 @@ final class CursorPaginationTest extends DoctrineTestCase
         ;
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
             new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
         ), 2);
 
@@ -272,7 +273,7 @@ final class CursorPaginationTest extends DoctrineTestCase
         ;
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(...$configurations), 2);
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(...$configurations), 2);
 
         $this->queryCounter->reset();
 
@@ -317,7 +318,7 @@ final class CursorPaginationTest extends DoctrineTestCase
         ;
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
             new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
         ), 2);
 
@@ -344,7 +345,7 @@ final class CursorPaginationTest extends DoctrineTestCase
         ;
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
             new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
         ), 2);
 
@@ -361,7 +362,7 @@ final class CursorPaginationTest extends DoctrineTestCase
         ;
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
             new OrderConfiguration('u.tenantId', static fn (User $user) => $user->getTenantId(), isUnique: false),
             new OrderConfiguration('u.id', static fn (User $user) => $user->getId(), isUnique: true),
         ), 2);
@@ -466,11 +467,13 @@ final class CursorPaginationTest extends DoctrineTestCase
             ->createQueryBuilder('u');
 
         if ($withJoin) {
-            $queryBuilder->leftJoin(User::class, 'u2', 'WITH', 'u2.id = u.id');
+            // doctrine/orm 3.6 deprecates WITH for the condition of an arbitrary join, doctrine/orm 4 forbids it
+            $conditionType = version_compare(InstalledVersions::getVersion('doctrine/orm') ?? '0', '3.6.0', '>=') ? 'ON' : 'WITH';
+            $queryBuilder->leftJoin(User::class, 'u2', $conditionType, 'u2.id = u.id');
         }
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
             new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
         ), 5, $fetchJoinCollection);
 
@@ -478,8 +481,8 @@ final class CursorPaginationTest extends DoctrineTestCase
         $ids = array_map(static fn (User $user): ?int => $user->getId(), iterator_to_array($pagination->getResults(), false));
 
         self::assertSame(range(1, 10), $ids);
-        // 3 pages (5, 5, then an empty one): 1 query per page, or 2 per non-empty page with the fetch join collection strategy
-        self::assertSame($expectedQueries, $this->queryCounter->count);
+        // 2 full pages: 1 query per page, or 2 with the fetch join collection strategy, then maybe an empty page
+        self::assertSame($expectedQueries + $this->trailingEmptyPageQueries(), $this->queryCounter->count);
     }
 
     /**
@@ -487,10 +490,10 @@ final class CursorPaginationTest extends DoctrineTestCase
      */
     public static function provideFetchJoinCollection(): iterable
     {
-        yield 'auto without join' => [null, false, 3];
-        yield 'auto with join' => [null, true, 5];
-        yield 'enabled without join' => [true, false, 5];
-        yield 'disabled without join' => [false, false, 3];
+        yield 'auto without join' => [null, false, 2];
+        yield 'auto with join' => [null, true, 4];
+        yield 'enabled without join' => [true, false, 4];
+        yield 'disabled without join' => [false, false, 2];
     }
 
     /**
@@ -504,7 +507,7 @@ final class CursorPaginationTest extends DoctrineTestCase
             ->createQueryBuilder('u');
 
         /** @var CursorPagination<User> $pagination */
-        $pagination = new CursorPagination($queryBuilder, new OrderConfigurations(
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
             new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
         ), $maxPerPages);
 

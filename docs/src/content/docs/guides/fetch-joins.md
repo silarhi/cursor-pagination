@@ -29,10 +29,10 @@ The `$fetchJoinCollection` argument defaults to `null`, which picks the strategy
 | -------------------------------------------------------------------------- | -------- | ---------------- |
 | No join, or only to-one joins (`u.company`)                                | disabled | 1                |
 | A collection join (`u.groups`), fetched or only used in the `WHERE` clause | enabled  | 2                |
-| An arbitrary join (`JOIN Group g WITH …`)                                  | enabled  | 2                |
+| An arbitrary join (`JOIN Group g ON …`)                                    | enabled  | 2                |
 | `SELECT DISTINCT u` with collection joins that are not selected            | disabled | 1                |
 | Only scalar fields selected (`SELECT u.id, u.email`)                       | disabled | 1                |
-| An empty page (the last one, or no result)                                 | either   | 1                |
+| An empty page (no result, or after a full last page with `Paginator`)      | either   | 1                |
 
 Before 2.3.0, any join enabled it, even a to-one join. Several root entities (`FROM User u, Group g`) are not supported:
 Doctrine's walkers throw `Cannot count query which selects two FROM components`.
@@ -46,7 +46,7 @@ $pagination = new CursorPagination($queryBuilder, $configurations, 100, fetchJoi
 ```
 
 - **`true`** keeps the behavior of the versions before 2.2.0, where it was the default.
-- **`false`** runs one query per page. An arbitrary join (`JOIN Profile p WITH p.user = u`) that matches one row per
+- **`false`** runs one query per page. An arbitrary join (`JOIN Profile p ON p.user = u`) that matches one row per
   root entity at most is the case where it helps.
 
 :::danger[Never false with a collection join]

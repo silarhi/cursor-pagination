@@ -24,7 +24,7 @@ final readonly class QueryAnalysis
         public bool $scalarOnly,
         /** A collection (to-many association) is joined: a root entity may take several SQL rows */
         public bool $joinsCollection,
-        /** An arbitrary join (JOIN Entity e WITH …) or several FROM entities: rows may be multiplied */
+        /** An arbitrary join (JOIN Entity e ON …) or several FROM entities: rows may be multiplied */
         public bool $joinsArbitrarily,
         /** SELECT DISTINCT on the root entity alone: the joined rows collapse into one row per root entity */
         public bool $distinctRoot,

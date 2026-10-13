@@ -44,10 +44,16 @@ abstract class DoctrineTestCase extends TestCase
             self::markTestSkipped('Extension pdo_sqlite is required.');
         }
 
-        $config = ORMSetup::createAttributeMetadataConfiguration(
-            paths: [__DIR__ . '/Entity'],
-            isDevMode: true,
-        );
+        $ormVersion = InstalledVersions::getVersion('doctrine/orm') ?? '0';
+        // Native lazy objects need PHP 8.4 and doctrine/orm 3.4+; older ORM versions
+        // (tested by the lowest-dependencies CI job) keep using proxy classes. doctrine/orm 4 always uses them.
+        $nativeLazyObjects = \PHP_VERSION_ID >= 80400 && version_compare($ormVersion, '3.4.0', '>=');
+
+        // createAttributeMetadataConfig() replaces createAttributeMetadataConfiguration() in doctrine/orm 3.5, which 4
+        // removes. It configures no proxy directory: only use it with native lazy objects
+        $config = $nativeLazyObjects && version_compare($ormVersion, '3.5.0', '>=')
+            ? ORMSetup::createAttributeMetadataConfig(paths: [__DIR__ . '/Entity'], isDevMode: true)
+            : ORMSetup::createAttributeMetadataConfiguration(paths: [__DIR__ . '/Entity'], isDevMode: true);
         $this->queryCounter = new QueryCounter();
         $config->setMiddlewares([new Middleware($this->queryCounter)]);
 
@@ -59,9 +65,7 @@ abstract class DoctrineTestCase extends TestCase
             $config,
         );
         $config->setEntityNamespaces(['CursorPagination' => 'Silarhi\CursorPagination\Tests\Entity']);
-        // Native lazy objects need PHP 8.4 and doctrine/orm 3.4+; older ORM versions
-        // (tested by the lowest-dependencies CI job) keep using proxy classes.
-        if (\PHP_VERSION_ID >= 80400 && version_compare(InstalledVersions::getVersion('doctrine/orm') ?? '0', '3.4.0', '>=')) {
+        if ($nativeLazyObjects && version_compare($ormVersion, '4.0.0-dev', '<')) {
             $config->enableNativeLazyObjects(true);
         }
         $entityManager = new EntityManager($connection, $config);

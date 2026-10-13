@@ -70,5 +70,5 @@ isset($configurations[1]);
 unset($configurations[1]);           // removes it, without renumbering the keys
 ```
 
-Setting anything other than an `OrderConfiguration`, or using an offset that is not an integer, throws an
+Setting anything other than an `OrderConfiguration`, or setting one at an offset that is not an integer, throws an
 `InvalidArgumentException`. The keys name the cursor parameters (`:cursor_parameter_<key>`).

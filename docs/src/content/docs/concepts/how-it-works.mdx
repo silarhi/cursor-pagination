@@ -64,8 +64,8 @@ For each page, `CursorPagination`:
 5. Yields the rows. A page with fewer rows than `$maxPerPages` is the last one; otherwise the next page is queried, and
    comes back empty when the total is a multiple of `$maxPerPages`.
 
-Without collection joins, that is one query per page. With them, the fetch-join-collection strategy takes two: see
-[fetch joins and collections](/guides/fetch-joins/).
+Without collection joins or arbitrary joins (`JOIN Entity e WITH …`), that is one query per page. With them, the
+fetch-join-collection strategy takes two: see [fetch joins and collections](/guides/fetch-joins/).
 
 The cursor is local to each iteration: every `foreach`, `getResults()` and `getChunkResults()` starts from the first
 page, even after a previous one was stopped with `break`, and two interleaved iterations do not share their cursor.

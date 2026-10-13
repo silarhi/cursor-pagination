@@ -34,7 +34,8 @@ composer require silarhi/cursor-pagination
         Every iteration starts from the beginning with its own cursor, even if a previous one was stopped early.
     </Card>
     <Card title="Fetch joins handled" icon="setting">
-        One query per page, or two when the query joins a collection: the page's ids, then their rows.
+        One query per page, or two when the query joins a collection or another entity (`JOIN … WITH`): the page's ids,
+        then their rows.
     </Card>
     <Card title="Query analysis" icon="warning">
         Collection joins and scalar rows are detected; misconfigured orders throw instead of skipping rows.

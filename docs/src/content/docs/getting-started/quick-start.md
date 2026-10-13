@@ -6,7 +6,7 @@ sidebar:
 ---
 
 A `CursorPagination` takes three things: a Doctrine `QueryBuilder`, the order of the pages (an `OrderConfigurations`
-collection), and the number of rows per page.
+collection), and the number of results per page.
 
 ```php
 use Silarhi\CursorPagination\Configuration\OrderConfiguration;

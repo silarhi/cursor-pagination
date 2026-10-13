@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Order configurations all declared `isUnique: false` throw a `LogicException`, with several configurations too. The check, and the one for a single configuration, run before the first page instead of the second.
 - An empty `OrderConfigurations` throws a `LogicException`, instead of fetching the first page again and again.
 - A `QueryBuilder` with a first result (`setFirstResult()`) makes `getResults()` and `count()` throw a `LogicException`: the offset was applied to every page, skipping rows on each of them.
+- A `QueryBuilder` that does not build a `SELECT` query (`update()`, `delete()`) makes `count()` throw a `LogicException` (`CursorPagination only supports SELECT queries.`).
 
 ### Fixed
 

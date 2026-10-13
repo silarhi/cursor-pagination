@@ -35,14 +35,15 @@ public function __construct(
 
 ## Exceptions
 
-These misconfigurations would skip rows: they throw a `LogicException` before any row is read.
+These misconfigurations throw a `LogicException` before any row is read. All but the last one would skip rows.
 
-| Message                                                                | Cause                                                                                                   |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `At least one order configuration is required.`                        | Empty `OrderConfigurations`.                                                                            |
-| `When using a single order configuration, it must be unique`           | A single configuration declared `isUnique: false`. See [ordering](/guides/ordering/#the-isunique-flag). |
-| `The order configurations are all declared non-unique: …`              | Several configurations, all declared `isUnique: false`.                                                 |
-| `The query builder must not have a first result (setFirstResult()): …` | `setFirstResult()` was called on the `QueryBuilder`. Also thrown by `count()`.                          |
+| Message                                                                | Cause                                                                                                                                      |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `At least one order configuration is required.`                        | Empty `OrderConfigurations`.                                                                                                               |
+| `When using a single order configuration, it must be unique`           | A single configuration declared `isUnique: false`. See [ordering](/guides/ordering/#the-isunique-flag).                                    |
+| `The order configurations are all declared non-unique: …`              | Several configurations, all declared `isUnique: false`.                                                                                    |
+| `The query builder must not have a first result (setFirstResult()): …` | `setFirstResult()` was called on the `QueryBuilder`. Also thrown by `count()`.                                                             |
+| `CursorPagination only supports SELECT queries.`                       | The `QueryBuilder` builds an `UPDATE` or `DELETE` query. Thrown by `count()`; `getResults()` may fail first with Doctrine's own exception. |
 
 Doctrine's own exceptions (an invalid DQL query, a query with several root entities) are not wrapped.
 

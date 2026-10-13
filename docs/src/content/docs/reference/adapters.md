@@ -35,7 +35,7 @@ Both give the same results. They differ in the queries they run:
   [counting](/guides/fetch-joins/#counting).
 
 `CursorPaginator` is called without a Doctrine cursor: `CursorPagination` keeps its own cursor condition, which handles
-any order expression, and reads its values with the closures of the order configurations, scalar rows included.
+any order expression, and reads its values with the closures of the order configurations, scalar rows included. See [Doctrine's CursorPaginator](/concepts/doctrine-cursor-paginator/) for how the two compare.
 
 ## PaginatorAdapterInterface
 

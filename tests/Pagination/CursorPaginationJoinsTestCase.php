@@ -112,7 +112,8 @@ abstract class CursorPaginationJoinsTestCase extends PaginationTestCase
             ->entityManager
             ->getRepository(Post::class)
             ->createQueryBuilder('p')
-            ->where('p.author IS NOT NULL');
+            ->addSelect('a')
+            ->join('p.author', 'a');
 
         // Doctrine's CursorPaginator only orders by fields and result variables: IDENTITY() goes through a hidden one
         /** @var CursorPagination<Post> $pagination */

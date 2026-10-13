@@ -61,9 +61,9 @@ composer normalize --dry-run
 
 ## Testing
 
-- `tests/DoctrineTestCase.php` boots an `EntityManager` on SQLite in memory with the `tests/Entity` entities and loads 10 users and 10 posts with a nullable many-to-one `author` (`User::$posts` is the one-to-many side), from `tests/Fixtures/UserDataLoader.php` (called directly: doctrine/data-fixtures conflicts with doctrine/orm 4; its constants hold the fixture values for expected results). Native lazy objects are enabled on PHP 8.4+ with doctrine/orm 3.4 to 3.x (always on in 4), proxies otherwise (the lowest-dependencies CI job); the metadata configuration uses `createAttributeMetadataConfig()` from 3.5 with native lazy objects only (the older name is removed in 4, but the new one configures no proxy directory, which PHP < 8.4 needs).
+- `tests/DoctrineTestCase.php` boots an `EntityManager` on SQLite in memory with the `tests/Entity` entities and loads 10 users and 10 posts with a nullable many-to-one `author` (`User::$posts` is the one-to-many side), from `tests/Fixtures/UserDataLoader.php` (via doctrine/data-fixtures; its constants hold the fixture values for expected results). Native lazy objects are enabled on PHP 8.4+ with doctrine/orm 3.4 to 3.x (always on in 4), proxies otherwise (the lowest-dependencies CI job); the metadata configuration uses `createAttributeMetadataConfig()` from 3.5 with native lazy objects only (the older name is removed in 4, but the new one configures no proxy directory, which PHP < 8.4 needs).
 - The pagination tests are abstract `*TestCase` classes extending `tests/Pagination/PaginationTestCase.php` (`createPagination()`, `trailingEmptyPageQueries()`), run once per adapter by the `final` subclasses in `tests/Pagination/Adapter/{Paginator,CursorPaginator}/` (traits `Doctrine*AdapterTrait` skip when the Doctrine class does not exist: `CursorPaginator` before 3.7, `Paginator` in 4). Create paginations with `$this->createPagination()`, not `new CursorPagination()`, and add query-count expectations for a full last page with `trailingEmptyPageQueries()`. Arbitrary joins in tests use `ON` from doctrine/orm 3.6, `WITH` before.
-- To try doctrine/orm 4 before its release: in a scratch copy, require `doctrine/orm: 4.0.x-dev` with `minimum-stability: dev` and run phpunit (the `Paginator` tests are skipped).
+- doctrine/data-fixtures conflicts with doctrine/orm 4 (even its `3.0.x` branch): the test suite only installs on doctrine/orm 3 until it supports 4. To try doctrine/orm 4 before that, in a scratch copy: drop data-fixtures (load `UserDataLoader` directly), require `doctrine/orm: 4.0.x-dev` with `minimum-stability: dev`, and run phpunit (the `Paginator` tests are skipped).
 - `$this->queryCounter` (`tests/QueryCounter.php`, a PSR-3 logger plugged into DBAL's logging middleware) counts executed queries and keeps their SQL (`reset()` before the code under test): use it to assert queries per page (e.g. `testFetchJoinCollection`) or the count query (`CursorPaginationJoinsTest::testCountQuery`; doctrine/orm < 3.3 renders a plain count as `count(u0_.id)` instead of `count(*)`). Its `$message` parameter stays untyped for psr/log 1.x.
 - The test entity's table is `User`, a reserved word on PostgreSQL (unquoted `user` means `CURRENT_USER`): rename it in metadata if tests or benchmarks ever run on PostgreSQL.
 
@@ -77,7 +77,7 @@ composer normalize --dry-run
 ## Dependency Constraints
 
 - `doctrine/orm` stays `^3.0`: the lowest-dependencies CI job tests its minimal version, and Renovate only widens it for new majors (`rangeStrategy: widen`). Never raise its floor.
-- QA tools are bumped to their latest releases. `config.bump-after-update: "dev"` also raises the other dev dependencies (`symfony/cache`) on a full `composer update`: check those floors before committing a `composer.json` touched by an update.
+- QA tools are bumped to their latest releases. `config.bump-after-update: "dev"` also raises the other dev dependencies (`symfony/cache`, `doctrine/data-fixtures`) on a full `composer update`: check those floors before committing a `composer.json` touched by an update.
 - `composer.lock` is not committed.
 
 ## API Documentation

@@ -13,6 +13,9 @@ declare(strict_types=1);
 namespace Silarhi\CursorPagination\Tests;
 
 use Composer\InstalledVersions;
+use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
+use Doctrine\Common\DataFixtures\Loader;
+use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Logging\Middleware;
 use Doctrine\ORM\EntityManager;
@@ -73,7 +76,11 @@ abstract class DoctrineTestCase extends TestCase
         $schemaTool->dropSchema($metadata);
         $schemaTool->createSchema($metadata);
 
-        (new UserDataLoader())->load($entityManager);
+        $loader = new Loader();
+        $loader->addFixture(new UserDataLoader());
+
+        $executor = new ORMExecutor($entityManager, new ORMPurger());
+        $executor->execute($loader->getFixtures());
 
         $this->entityManager = $entityManager;
     }

@@ -87,8 +87,11 @@ composer normalize --dry-run
 methods), `OrderConfiguration`, `OrderConfigurations`, `ChunkIterator`, the generated cursor condition, exceptions.
 
 1. **`docs/`** — the documentation site (cursor-pagination.silarhi.dev, Starlight with `@silarhi/docs-kit`): guides
-   and reference pages. Build it with `yarn install && yarn build` in `docs/`. Keep `README.md` short: update its
+   and reference pages. Build it with `pnpm install && pnpm build` in `docs/`. Keep `README.md` short: update its
    features list or quick start only when they change.
+   pnpm's version is pinned by `packageManager` in each `package.json` (root tooling and `docs/`); a
+   `pnpm-workspace.yaml` `allowBuilds` list would name the dependencies allowed to run install scripts (none needs one
+   today).
 2. **`CLAUDE.md`** — Architecture.
 3. **PHPDoc blocks** — accurate `@param`, `@return` and `@throws` on public methods.
 4. **`CHANGELOG.md`** — see below.

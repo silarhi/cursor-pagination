@@ -1,0 +1,4 @@
+# Our own theme, released by us (github.com/silarhi/docs-kit): installed as soon as it is published, without
+# waiting out pnpm's minimum release age
+minimumReleaseAgeExclude:
+  - '@silarhi/docs-kit'

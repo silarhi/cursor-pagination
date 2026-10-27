@@ -1,6 +1,6 @@
 {
     "name": "silarhi/cursor-pagination",
-    "description": "A doctrine ORM cursor based pagination library for faster batch operations.",
+    "description": "Cursor-based (keyset) pagination for Doctrine ORM, for fast batch processing of large tables",
     "license": "MIT",
     "type": "library",
     "keywords": [
@@ -9,7 +9,10 @@
         "pagination",
         "cursor",
         "cursor-pagination",
-        "keyset"
+        "keyset",
+        "doctrine-orm",
+        "keyset-pagination",
+        "batch-processing"
     ],
     "authors": [
         {
@@ -17,6 +20,12 @@
             "email": "dev@silarhi.fr"
         }
     ],
+    "homepage": "https://cursor-pagination.silarhi.dev",
+    "support": {
+        "issues": "https://github.com/silarhi/cursor-pagination/issues",
+        "source": "https://github.com/silarhi/cursor-pagination",
+        "docs": "https://cursor-pagination.silarhi.dev"
+    },
     "require": {
         "php": ">=8.2",
         "doctrine/orm": "^3.0"

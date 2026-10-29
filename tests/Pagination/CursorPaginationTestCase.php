@@ -16,6 +16,7 @@ use Composer\InstalledVersions;
 
 use function count;
 
+use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Silarhi\CursorPagination\Configuration\OrderConfiguration;
@@ -333,6 +334,75 @@ abstract class CursorPaginationTestCase extends PaginationTestCase
 
         $this->expectExceptionObject(new LogicException($message));
         $pagination->count();
+    }
+
+    /**
+     * @param callable(QueryBuilder): QueryBuilder $prepare
+     */
+    #[DataProvider('provideNonSelectQueries')]
+    public function testCountRejectsNonSelectQueries(callable $prepare): void
+    {
+        /** @var CursorPagination<User> $pagination */
+        $pagination = $this->createPagination($prepare($this->entityManager->createQueryBuilder()), new OrderConfigurations(
+            new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
+        ), 2);
+
+        $this->queryCounter->reset();
+
+        try {
+            $pagination->count();
+        } catch (LogicException $logicException) {
+            self::assertSame('CursorPagination only supports SELECT queries.', $logicException->getMessage());
+            self::assertSame(0, $this->queryCounter->count);
+
+            return;
+        }
+
+        self::fail('A LogicException should have been thrown.');
+    }
+
+    /**
+     * @return iterable<string, array{callable(QueryBuilder): QueryBuilder}>
+     */
+    public static function provideNonSelectQueries(): iterable
+    {
+        yield 'update' => [static fn (QueryBuilder $queryBuilder): QueryBuilder => $queryBuilder->update(User::class, 'u')->set('u.number', 0)];
+        yield 'delete' => [static fn (QueryBuilder $queryBuilder): QueryBuilder => $queryBuilder->delete(User::class, 'u')];
+    }
+
+    #[DataProvider('provideUseOutputWalkers')]
+    public function testParameterOnlyUsedInTheSelectClause(?bool $useOutputWalkers): void
+    {
+        $queryBuilder = $this
+            ->entityManager
+            ->getRepository(User::class)
+            ->createQueryBuilder('u')
+            ->addSelect('u.number * :factor AS HIDDEN weightedNumber')
+            ->where('u.tenantId = :tenantId')
+            ->setParameter('factor', 10)
+            ->setParameter('tenantId', 2)
+        ;
+
+        /** @var CursorPagination<User> $pagination */
+        $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
+            new OrderConfiguration('u.id', static fn (User $user) => $user->getId()),
+        ), 2, useOutputWalkers: $useOutputWalkers);
+
+        $ids = array_map(static fn (User $user): ?int => $user->getId(), iterator_to_array($pagination->getResults(), false));
+
+        self::assertSame([1, 2, 3, 7, 8, 9], $ids);
+        // The count query replaces the select clause: :factor must not be bound to it
+        self::assertSame(6, $pagination->count());
+    }
+
+    /**
+     * @return iterable<string, array{?bool}>
+     */
+    public static function provideUseOutputWalkers(): iterable
+    {
+        yield 'default walkers' => [null];
+        yield 'output walkers' => [true];
+        yield 'tree walkers' => [false];
     }
 
     public function testMaxResultsIsReplaced(): void

@@ -38,7 +38,7 @@
         "phpstan/phpstan": "^2.3.3",
         "phpstan/phpstan-strict-rules": "^2.1.0",
         "phpunit/phpunit": "^11.5.57 || ^12.5.38 || ^13.4.1",
-        "rector/rector": "^2.8.1",
+        "rector/rector": "^2.8.2",
         "symfony/cache": "^7.4.21 || ^8.0",
         "vimeo/psalm": "^5.26.1 || ^6.20.1"
     },

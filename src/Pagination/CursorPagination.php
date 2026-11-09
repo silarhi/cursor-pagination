@@ -45,6 +45,9 @@ use function sprintf;
  */
 final class CursorPagination implements IteratorAggregate, Countable
 {
+    /** Whether QueryBuilder::addOrderBy() accepts the SortDirection enum, resolved once per process */
+    private static ?bool $acceptsEnum = null;
+
     /** @var int<0, max>|null */
     private ?int $nbResults = null;
 
@@ -208,10 +211,9 @@ final class CursorPagination implements IteratorAggregate, Countable
      */
     private function sortDirection(OrderConfiguration $configuration): SortDirection|string
     {
-        static $acceptsEnum = null;
-        $acceptsEnum ??= str_contains((string) (new ReflectionMethod(QueryBuilder::class, 'addOrderBy'))->getParameters()[1]->getType(), 'SortDirection');
+        self::$acceptsEnum ??= str_contains((string) (new ReflectionMethod(QueryBuilder::class, 'addOrderBy'))->getParameters()[1]->getType(), 'SortDirection');
 
-        if (!$acceptsEnum) {
+        if (!self::$acceptsEnum) {
             return $configuration->getOrderByExpression();
         }
 

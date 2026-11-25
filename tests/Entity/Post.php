@@ -24,8 +24,6 @@ final class Post
     private ?int $id = null;
 
     public function __construct(
-        #[ORM\Column(type: Types::STRING, length: 255)]
-        private string $title,
         #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'posts')]
         private ?User $author = null,
     ) {
@@ -35,11 +33,6 @@ final class Post
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getTitle(): string
-    {
-        return $this->title;
     }
 
     public function getAuthor(): ?User

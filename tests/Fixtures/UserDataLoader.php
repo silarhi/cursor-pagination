@@ -18,8 +18,6 @@ use Override;
 use Silarhi\CursorPagination\Tests\Entity\Post;
 use Silarhi\CursorPagination\Tests\Entity\User;
 
-use function sprintf;
-
 final class UserDataLoader implements FixtureInterface
 {
     /** Tenant ids of users 1 to 10 */
@@ -36,16 +34,13 @@ final class UserDataLoader implements FixtureInterface
             $user = new User();
             $user->setNumber($i);
             $user->setTenantId(self::TENANT_IDS[$i - 1]);
-            $user->setUsername(sprintf('User %d', $i));
-            $user->setFirstName(sprintf('First name %d', $i));
-            $user->setLastName(sprintf('Last name %d', $i));
 
             $manager->persist($user);
             $users[$i] = $user;
         }
 
-        foreach (self::POST_AUTHORS as $index => $authorId) {
-            $manager->persist(new Post(sprintf('Post %d', $index + 1), null === $authorId ? null : $users[$authorId]));
+        foreach (self::POST_AUTHORS as $authorId) {
+            $manager->persist(new Post(null === $authorId ? null : $users[$authorId]));
         }
 
         $manager->flush();

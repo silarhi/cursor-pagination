@@ -25,8 +25,5 @@ return RectorConfig::configure()
         codeQuality: true,
         doctrineCodeQuality: true,
     )
-    ->withComposerBased(
-        doctrine: true,
-        phpunit: true,
-    )
+    ->withComposerBased()
 ;

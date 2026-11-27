@@ -19,6 +19,8 @@ use function count;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use ReflectionMethod;
+use ReflectionProperty;
 use Silarhi\CursorPagination\Configuration\OrderConfiguration;
 use Silarhi\CursorPagination\Configuration\OrderConfigurations;
 use Silarhi\CursorPagination\Pagination\CursorPagination;
@@ -440,6 +442,43 @@ abstract class CursorPaginationTestCase extends PaginationTestCase
         $ids = array_map(static fn (User $user): ?int => $user->getId(), iterator_to_array($pagination->getResults(), false));
 
         self::assertSame([1, 2, 3, 7, 8, 9, 4, 5, 6, 10], $ids);
+    }
+
+    /**
+     * doctrine/orm < 3.7 only accepts 'ASC' and 'DESC': forces the detection of the SortDirection enum to fail.
+     */
+    public function testStringSortDirectionsWithoutTheSortDirectionEnum(): void
+    {
+        $orderParameterType = (string) (new ReflectionMethod(QueryBuilder::class, 'addOrderBy'))->getParameters()[1]->getType();
+        if (!str_contains($orderParameterType, 'string')) {
+            self::markTestSkipped('QueryBuilder::addOrderBy() only accepts the SortDirection enum.');
+        }
+
+        $acceptsEnum = new ReflectionProperty(CursorPagination::class, 'acceptsEnum');
+        $previousAcceptsEnum = $acceptsEnum->getValue();
+        $acceptsEnum->setValue(null, false);
+
+        try {
+            $queryBuilder = $this
+                ->entityManager
+                ->getRepository(User::class)
+                ->createQueryBuilder('u')
+            ;
+
+            /** @var CursorPagination<User> $pagination */
+            $pagination = $this->createPagination($queryBuilder, new OrderConfigurations(
+                new OrderConfiguration('u.tenantId', static fn (User $user) => $user->getTenantId(), isUnique: false),
+                new OrderConfiguration('u.id', static fn (User $user) => $user->getId(), orderAscending: false),
+            ), 4);
+
+            $this->queryCounter->reset();
+            $ids = array_map(static fn (User $user): ?int => $user->getId(), iterator_to_array($pagination->getResults(), false));
+        } finally {
+            $acceptsEnum->setValue(null, $previousAcceptsEnum);
+        }
+
+        self::assertSame([9, 8, 7, 3, 2, 1, 10, 6, 5, 4], $ids);
+        self::assertStringContainsString('ORDER BY u0_.tenantId ASC, u0_.id DESC', $this->queryCounter->queries[0]);
     }
 
     #[DataProvider('provideBreakAfter')]

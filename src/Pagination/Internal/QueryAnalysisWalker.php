@@ -78,11 +78,11 @@ final class QueryAnalysisWalker extends TreeWalkerAdapter
 
         $scalarOnly = true;
         $selectsRootOnly = true;
-        foreach ($selectStatement->selectClause->selectExpressions as $selectExpression) {
-            if (!$selectExpression instanceof SelectExpression) {
-                continue;
-            }
-
+        $selectExpressions = array_filter(
+            $selectStatement->selectClause->selectExpressions,
+            static fn (mixed $selectExpression): bool => $selectExpression instanceof SelectExpression,
+        );
+        foreach ($selectExpressions as $selectExpression) {
             $expression = $selectExpression->expression;
             $alias = match (true) {
                 is_string($expression) => $expression,
@@ -102,11 +102,8 @@ final class QueryAnalysisWalker extends TreeWalkerAdapter
         $joinsCollection = false;
         $joinsArbitrarily = count($declarations) > 1;
         foreach ($declarations as $declaration) {
-            foreach ($declaration->joins as $join) {
-                if (!$join instanceof Join) {
-                    continue;
-                }
-
+            $joins = array_filter($declaration->joins, static fn (mixed $join): bool => $join instanceof Join);
+            foreach ($joins as $join) {
                 $joinDeclaration = $join->joinAssociationDeclaration;
                 if ($joinDeclaration instanceof JoinAssociationDeclaration) {
                     $relation = $queryComponents[$joinDeclaration->aliasIdentificationVariable]['relation'] ?? null;

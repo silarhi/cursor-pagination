@@ -7,6 +7,9 @@
         {
             "name": "PHPUnit",
             "php": "8.6"
+        },
+        {
+            "name": "PHPStan"
         }
     ],
     "additional_checks": [
@@ -16,6 +19,14 @@
                 "php": "@lowest",
                 "dependencies": "latest",
                 "command": "composer validate --strict && composer normalize --dry-run --diff"
+            }
+        },
+        {
+            "name": "PHPStan on the latest PHP",
+            "job": {
+                "php": "@latest",
+                "dependencies": "latest",
+                "command": "vendor/bin/phpstan analyse --no-progress"
             }
         }
     ],

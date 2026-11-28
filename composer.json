@@ -35,7 +35,7 @@
         "doctrine/collections": "^2.2 || ^3.0",
         "doctrine/data-fixtures": "^2.2.2",
         "doctrine/persistence": "^3.3.1 || ^4.0",
-        "ergebnis/composer-normalize": "^2.58.0",
+        "ergebnis/composer-normalize": "^2.59.0",
         "friendsofphp/php-cs-fixer": "^3.95.32",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan": "^2.3.7",
